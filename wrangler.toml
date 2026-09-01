@@ -1,0 +1,10 @@
+name = "rich-colvill"
+type = "javascript"
+account_id = "dbc0a553ce199207b52ca7f2a1177b4a"
+workers_dev = true
+compatibility_date = "2024-09-01"
+
+[env.production]
+routes = [
+  { pattern = "rich-colvill.pages.dev", zone_name = "pages.dev" }
+]
