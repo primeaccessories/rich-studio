@@ -1620,3 +1620,64 @@ a {
 }
 
 .pf.is-row .pf-caption { margin-top: 14px; }
+
+/* ============================================================
+   STATEMENT OF PRACTICE — centred across the page
+   The block, its label and the client list all share one centre axis.
+   The measure stays ~22ch so the line breaks Rich sees are unchanged.
+   ============================================================ */
+
+.hold-inner { text-align: center; }
+
+.hold-label {
+  justify-content: center;
+  width: 100%;
+}
+
+.hold-copy {
+  max-width: 22ch;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.hold-body {
+  max-width: 62ch;
+  margin-inline: auto;
+  text-align: center;
+}
+
+/* The reveal slid in from the left, which reads as broken on centred
+   text — the lines appeared to hang off their own axis. Vertical keeps
+   every line on the centre line for the whole tween. */
+.hold-line {
+  transform: translate3d(0, calc((1 - var(--lp)) * 0.24em), 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hold-line { transform: none !important; }
+}
+
+/* The statement is 14 lines. At the shared .t-statement size that is
+   ~823px of type, which overflowed a 900px viewport — the label collided
+   with the nav and the client list was cut off the bottom. Sized so the
+   whole block (label + statement + client list) sits inside the pinned
+   viewport, with the measure still 22ch so the line breaks are unchanged. */
+.hold {
+  padding-block: clamp(64px, 10vh, 104px);
+}
+
+.hold-copy {
+  font-size: clamp(0.95rem, 2.9vw, 2.45rem);
+  line-height: 1.06;
+}
+
+.hold-body { margin-top: clamp(14px, 2.4vh, 26px); }
+
+/* Sizing the statement off vw alone overflows short-but-wide viewports
+   (1280x720, 1440x820): the type is chosen by WIDTH while the real
+   constraint is HEIGHT. 14 lines at 1.06 leading need 14.84 x font-size,
+   plus ~320px for the padding, label and client list — so cap the size by
+   the height budget too and take whichever is smaller. */
+.hold-copy {
+  font-size: clamp(1.25rem, min(2.9vw, calc((100svh - 320px) / 15)), 2.45rem);
+}
