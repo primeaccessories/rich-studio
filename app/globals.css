@@ -1,125 +1,1191 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* ============================================================
+   ®RICH COLVILL — PRESS SHEET
+   The site is a sheet coming off a press. Paper stock, ink,
+   print furniture, and imagery that arrives out of register.
+   Palette is two-tone by doctrine: all colour comes either from
+   Rich's own work, or from process-ink fringing on misregister.
+   ============================================================ */
+
+@theme {
+  /* --- stock + ink (his real brand values) --- */
+  --color-paper: #f0f0ef;
+  --color-paper-2: #e6e5e2;
+  --color-ink: #091017;
+  --color-ink-2: #3a3f46;
+
+  /* --- process inks: ONLY ever seen as misregistration fringing --- */
+  --color-cyan: #00aeef;
+  --color-magenta: #ec008c;
+  --color-yellow: #fff200;
+
+  --font-display: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-wordmark: "HelveticaCondensed", "Archivo", "Helvetica Neue", sans-serif;
+  --font-mono: "SpaceMono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* ============================================================
+   FONTS — self-hosted. Helvetica Condensed is Rich's own licensed
+   file carried over from his WordPress install; it is one weight
+   only, so it is reserved for the wordmark and never used for
+   display copy that needs weight range.
+   ============================================================ */
+
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/Archivo-Variable.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "HelveticaCondensed";
+  src: url("/fonts/HelveticaCondensed-Regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SpaceMono";
+  src: url("/fonts/SpaceMono-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SpaceMono";
+  src: url("/fonts/SpaceMono-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ============================================================
+   TOKENS
+   ============================================================ */
+
+:root {
+  --paper: #f0f0ef;
+  --paper-2: #e6e5e2;
+  --ink: #091017;
+  --ink-70: rgba(9, 16, 23, 0.7);
+  --ink-45: rgba(9, 16, 23, 0.45);
+  --ink-22: rgba(9, 16, 23, 0.22);
+  --ink-12: rgba(9, 16, 23, 0.12);
+
+  --cyan: #00aeef;
+  --magenta: #ec008c;
+  --yellow: #fff200;
+
+  /* the act ground — repainted per case study from that project's
+     own artwork. Defaults to paper so the home page is neutral. */
+  --act: var(--paper);
+  --act-ink: var(--ink);
+
+  /* grid: 12 columns, gutter, and the page margin the crop marks sit in */
+  --cols: 12;
+  --gutter: clamp(12px, 1.4vw, 24px);
+  --margin: clamp(16px, 3.2vw, 56px);
+  --rule: 1px;
+
+  /* motion — the named durations. Nothing ships outside these. */
+  --t-snap: 320ms;   /* register on hover */
+  --t-release: 520ms; /* fall back out of register */
+  --t-act: 720ms;     /* act-to-act ground change */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
 * {
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
 }
 
 html {
-  scroll-behavior: smooth;
+  /* ScrollSmoother drives scrolling; never both. */
+  scroll-behavior: auto;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: #0a0a0a;
-  color: #ffffff;
-  font-family: 'Inter', system-ui, sans-serif;
-  line-height: 1.6;
+  background: var(--act);
+  color: var(--act-ink);
+  font-family: var(--font-display, "Archivo", sans-serif);
+  font-synthesis-weight: none;
+  line-height: 1.28;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  transition: background-color var(--t-act) var(--ease-in-out),
+    color var(--t-act) var(--ease-in-out);
 }
 
-/* Dark mode is default */
-:root {
-  --background: #0a0a0a;
-  --surface: #1a1a1a;
-  --foreground: #ffffff;
-  --foreground-muted: #e0e0e0;
-  --accent: #ef4444;
-  --accent-dim: #991b1b;
-  --border: #333333;
-  --focus-ring: #ef4444;
+img,
+canvas,
+video {
+  display: block;
+  max-width: 100%;
 }
 
-/* Smooth transitions */
-a, button {
-  transition: all 150ms ease-out;
-}
-
-/* Focus states */
-a:focus-visible,
-button:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
-}
-
-/* Respect reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-/* Utility classes */
-.container-max {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 24px;
-}
-
-.text-glow {
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
-}
-
-.link-hover {
-  position: relative;
+a {
   color: inherit;
   text-decoration: none;
 }
 
-.link-hover::after {
+/* Focus is never removed — it is drawn as a registration target. */
+:focus-visible {
+  outline: 2px solid var(--act-ink);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: var(--act-ink);
+  color: var(--act);
+}
+
+/* ============================================================
+   TYPE — scale cliff. There is no mid-size type on this site;
+   it is either furniture-small or enormous. That gap IS the
+   maximalism.
+   ============================================================ */
+
+.t-mono {
+  font-family: var(--font-mono, monospace);
+  font-size: clamp(9px, 0.68vw, 11px);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  font-weight: 400;
+}
+
+.t-mono-b {
+  font-weight: 700;
+}
+
+/* The wordmark: Rich's own Helvetica Condensed, cropped to the page. */
+.t-wordmark {
+  font-family: var(--font-wordmark, sans-serif);
+  font-size: clamp(3rem, 15.5vw, 17rem);
+  line-height: 0.82;
+  letter-spacing: -0.015em;
+  text-transform: uppercase;
+}
+
+/* Display: Archivo at extreme weight + tight width. */
+.t-display {
+  font-family: var(--font-display, sans-serif);
+  font-weight: 800;
+  font-stretch: 82%;
+  font-size: clamp(2.4rem, 8.4vw, 9rem);
+  line-height: 0.88;
+  letter-spacing: -0.028em;
+  text-transform: uppercase;
+}
+
+.t-statement {
+  font-family: var(--font-display, sans-serif);
+  font-weight: 700;
+  font-stretch: 88%;
+  font-size: clamp(1.5rem, 4.1vw, 3.6rem);
+  line-height: 1.02;
+  letter-spacing: -0.018em;
+  text-transform: uppercase;
+}
+
+/* Body copy is deliberately small and set narrow — a caption on a
+   press sheet, not a blog. Rich writes in caps; we do not fight it. */
+.t-body {
+  font-family: var(--font-display, sans-serif);
+  font-weight: 400;
+  font-size: clamp(0.82rem, 1.02vw, 0.98rem);
+  line-height: 1.55;
+  letter-spacing: 0.005em;
+  max-width: 46ch;
+}
+
+.t-caps {
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+
+.sheet {
+  width: 100%;
+  padding-inline: var(--margin);
+}
+
+.grid12 {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  gap: var(--gutter);
+}
+
+/* The visible column rules — Swiss grid made literal, held down the
+   whole page. Sits behind content, never intercepts pointer events. */
+.column-rules {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  padding-inline: var(--margin);
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  gap: var(--gutter);
+  opacity: 0.5;
+}
+
+.column-rules span {
+  border-left: var(--rule) solid var(--ink-12);
+}
+
+.column-rules span:last-child {
+  border-right: var(--rule) solid var(--ink-12);
+}
+
+@media (max-width: 900px) {
+  :root {
+    --cols: 6;
+  }
+}
+
+/* ============================================================
+   PRINT FURNITURE — restrained: corner crop marks + margin HUD.
+   Colour bars appear only at act transitions.
+   ============================================================ */
+
+.furniture {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+
+.crop {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+}
+
+.crop::before,
+.crop::after {
+  content: "";
+  position: absolute;
+  background: var(--act-ink);
+  opacity: 0.55;
+}
+
+/* horizontal arm */
+.crop::before {
+  height: var(--rule);
+  width: 22px;
+}
+
+/* vertical arm */
+.crop::after {
+  width: var(--rule);
+  height: 22px;
+}
+
+.crop-tl { top: 14px; left: 14px; }
+.crop-tr { top: 14px; right: 14px; }
+.crop-bl { bottom: 14px; left: 14px; }
+.crop-br { bottom: 14px; right: 14px; }
+
+.crop-tr::before, .crop-br::before { right: 0; }
+.crop-tr::after,  .crop-br::after  { right: 0; }
+.crop-bl::before, .crop-br::before { bottom: 0; }
+.crop-bl::after,  .crop-br::after  { bottom: 0; }
+
+/* The HUD — a press sheet's slug line. */
+.hud {
+  position: fixed;
+  z-index: 61;
+  pointer-events: none;
+  color: var(--act-ink);
+  opacity: 0.72;
+  transition: color var(--t-act) var(--ease-in-out);
+}
+
+.hud-l { top: 16px; left: 46px; }
+.hud-r { top: 16px; right: 46px; text-align: right; }
+.hud-b { bottom: 16px; left: 46px; }
+.hud-br { bottom: 16px; right: 46px; text-align: right; }
+
+@media (max-width: 640px) {
+  .hud-b, .hud-br { display: none; }
+  .hud-l { left: 40px; }
+  .hud-r { right: 40px; }
+}
+
+/* Registration target — the ⊕ mark. Drawn, not an image. */
+.target {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: var(--rule) solid currentColor;
+  position: relative;
+  display: inline-block;
+  opacity: 0.6;
+}
+
+.target::before,
+.target::after {
+  content: "";
+  position: absolute;
+  background: currentColor;
+}
+
+.target::before {
+  left: 50%;
+  top: -4px;
+  bottom: -4px;
+  width: var(--rule);
+  transform: translateX(-50%);
+}
+
+.target::after {
+  top: 50%;
+  left: -4px;
+  right: -4px;
+  height: var(--rule);
+  transform: translateY(-50%);
+}
+
+/* ============================================================
+   REGISTRATION — the signature move.
+   A CSS-only fallback for browsers with no WebGL: the plates are
+   three stacked copies of the image, offset and blended. The
+   WebGL path replaces this with true halftone separation.
+   ============================================================ */
+
+.reg {
+  position: relative;
+  overflow: hidden;
+  background: var(--paper-2);
+  /* p = registration progress, 0 = fully out of register, 1 = true */
+  --p: 0.15;
+}
+
+.reg canvas,
+.reg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* CSS fallback plates */
+.reg-fallback .reg-plate {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: multiply;
+  will-change: transform;
+  transition: transform var(--t-release) var(--ease-out);
+}
+
+.reg-fallback .reg-plate-c {
+  transform: translate3d(calc((1 - var(--p)) * -11px), calc((1 - var(--p)) * 5px), 0);
+}
+.reg-fallback .reg-plate-m {
+  transform: translate3d(calc((1 - var(--p)) * 9px), calc((1 - var(--p)) * -7px), 0);
+}
+.reg-fallback .reg-plate-y {
+  transform: translate3d(calc((1 - var(--p)) * 2px), calc((1 - var(--p)) * 10px), 0);
+}
+
+.reg:hover,
+.reg:focus-within {
+  --p: 1;
+}
+
+.reg:hover .reg-plate,
+.reg:focus-within .reg-plate {
+  transition-duration: var(--t-snap);
+}
+
+/* The base plate carries the real image and the alt text; the three
+   colour plates ride on top of it, multiplied. */
+.reg-base {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: calc(0.25 + 0.75 * var(--p));
+  transition: opacity var(--t-release) var(--ease-out);
+}
+
+.reg:hover .reg-base,
+.reg:focus-within .reg-base {
+  transition-duration: var(--t-snap);
+}
+
+/* Skip link — visible the moment it takes focus, never before. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 12px 18px;
+}
+
+.skip-link:focus {
+  left: 12px;
+  top: 12px;
+}
+
+/* Grain. One tileable SVG turbulence, multiplied over everything.
+   Cheap, and it is what makes the paper read as paper. */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  pointer-events: none;
+  opacity: 0.28;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
+}
+
+/* ============================================================
+   SMOOTH SCROLL — ScrollSmoother requires this exact wrapper
+   structure. Desktop pointer-fine only; touch keeps native scroll.
+   ============================================================ */
+
+#smooth-wrapper {
+  position: relative;
+}
+
+#smooth-content {
+  will-change: transform;
+}
+
+/* ============================================================
+   REDUCED MOTION — everything is simply already in register.
+   Nothing is lost but the performance.
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .reg {
+    --p: 1 !important;
+  }
+
+  .reg-fallback .reg-plate {
+    transform: none !important;
+  }
+
+  .grain {
+    opacity: 0.18;
+  }
+}
+
+/* ============================================================
+   COMPONENT LAYER
+   ============================================================ */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- MASTHEAD ---------- */
+
+.masthead {
+  position: relative;
+  z-index: 1;
+  min-height: 100svh;
+  padding-top: clamp(72px, 12vh, 150px);
+  padding-bottom: clamp(24px, 5vh, 64px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.wordmark {
+  margin: 0;
+  position: relative;
+}
+
+/* Four ink plates stacked. At --p 0 they are scattered; at 1 they are
+   one solid wordmark. This is the site's thesis in the first element. */
+.wordmark-stack {
+  position: relative;
+  display: block;
+  isolation: isolate;
+}
+
+.wm-plate {
+  display: block;
+  white-space: nowrap;
+  mix-blend-mode: multiply;
+  will-change: transform;
+}
+
+.wm-plate:not(.wm-c) {
+  position: absolute;
+  inset: 0;
+}
+
+.wm-c { color: var(--cyan);    transform: translate3d(calc((1 - var(--p)) * -0.055em), calc((1 - var(--p)) *  0.022em), 0); }
+.wm-m { color: var(--magenta); transform: translate3d(calc((1 - var(--p)) *  0.042em), calc((1 - var(--p)) * -0.030em), 0); }
+.wm-y { color: var(--yellow);  transform: translate3d(calc((1 - var(--p)) *  0.012em), calc((1 - var(--p)) *  0.040em), 0); }
+.wm-k { color: var(--ink);     opacity: calc(0.10 + 0.90 * var(--p)); }
+
+.masthead-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(20px, 4vw, 64px);
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.masthead-strap {
+  margin: 0;
+  flex: 1 1 18ch;
+}
+
+.masthead-feature {
+  flex: 0 1 34ch;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: var(--rule) solid var(--ink-22);
+  padding-top: 10px;
+}
+
+.feature-link {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.feature-line {
+  font-weight: 700;
+  font-stretch: 88%;
+  font-size: clamp(0.95rem, 1.6vw, 1.32rem);
+  line-height: 1.1;
+  /* Each strap arrives out of register and settles. */
+  animation: strap-register 620ms var(--ease-out) both;
+}
+
+@keyframes strap-register {
+  from { opacity: 0; transform: translate3d(-0.35em, 0, 0); filter: blur(1.5px); }
+  to   { opacity: 1; transform: none; filter: none; }
+}
+
+.feature-client { opacity: 0.62; }
+
+.feature-link:hover .feature-client,
+.feature-link:focus-visible .feature-client { opacity: 1; }
+
+.feature-dots { display: flex; gap: 6px; margin-top: 4px; }
+
+.feature-dot {
+  width: 18px;
+  height: 3px;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  background: var(--ink-22);
+  transition: background 240ms var(--ease-out);
+}
+
+.feature-dot.is-on { background: var(--ink); }
+
+/* Touch targets must stay 44px even when the visible mark is 3px tall. */
+.feature-dot::after {
   content: '';
   position: absolute;
-  bottom: -2px;
-  left: 0;
-  width: 0;
-  height: 2px;
-  background: #ef4444;
-  transition: width 200ms ease-out;
+  inset: -20px -4px;
 }
 
-.link-hover:hover::after {
+.feature-dot { position: relative; }
+
+/* ---------- WORK ---------- */
+
+.work {
+  position: relative;
+  z-index: 1;
+  padding-block: clamp(56px, 11vh, 140px);
+}
+
+.work-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(16px, 3vw, 48px);
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: clamp(20px, 3vh, 40px);
+}
+
+.work-head h2 { margin: 0; }
+
+.facets { display: flex; gap: clamp(16px, 3vw, 44px); flex-wrap: wrap; }
+
+.facet { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; max-width: 40ch; }
+
+.facet legend { opacity: 0.5; padding: 0; margin-bottom: 4px; }
+
+.facet-btn {
+  background: none;
+  border: 0;
+  border-bottom: var(--rule) solid transparent;
+  padding: 4px 0;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.5;
+  transition: opacity 200ms var(--ease-out), border-color 200ms var(--ease-out);
+  min-height: 32px;
+}
+
+.facet-btn:hover { opacity: 0.85; }
+
+.facet-btn.is-on {
+  opacity: 1;
+  border-bottom-color: currentColor;
+}
+
+.work-count { opacity: 0.45; margin-bottom: 14px; }
+
+.work-empty { opacity: 0.4; padding-block: 40px; }
+
+.work-grid { list-style: none; row-gap: clamp(28px, 5vh, 72px); }
+
+.work-tile { grid-column: span var(--span, 6); min-width: 0; }
+
+@media (max-width: 900px) {
+  /* On 6 columns the desktop spans overflow; clamp every tile to half. */
+  .work-tile { grid-column: span 3; }
+}
+
+@media (max-width: 560px) {
+  .work-tile { grid-column: span 6; }
+}
+
+.work-link { display: block; }
+
+.work-thumb {
+  aspect-ratio: 4 / 3;
   width: 100%;
+  margin-bottom: 10px;
 }
 
-/* Button base */
-.btn {
+.work-cap { display: flex; flex-direction: column; gap: 3px; }
+
+.work-num { opacity: 0.4; }
+
+.work-title {
+  font-weight: 700;
+  font-stretch: 88%;
+  font-size: clamp(0.92rem, 1.35vw, 1.16rem);
+  line-height: 1.12;
+}
+
+.work-facet { opacity: 0.45; }
+
+/* ---------- THE HOLD ---------- */
+
+.hold {
+  position: relative;
+  z-index: 1;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  background: var(--paper-2);
+}
+
+.hold-inner { width: 100%; max-width: 1500px; margin-inline: auto; }
+
+.hold-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0.5;
+  margin-bottom: clamp(16px, 3vh, 34px);
+}
+
+.hold-copy { margin: 0 0 clamp(18px, 3vh, 36px); max-width: 22ch; }
+
+/* Each split line registers independently. */
+.hold-line {
+  --lp: 1;
+  display: block;
+  opacity: calc(0.12 + 0.88 * var(--lp));
+  transform: translate3d(calc((1 - var(--lp)) * -0.18em), 0, 0);
+  will-change: transform, opacity;
+}
+
+.hold-body { opacity: 0.62; max-width: 62ch; }
+
+/* ---------- CONTACT ---------- */
+
+.contact {
+  position: relative;
+  z-index: 1;
+  padding-block: clamp(64px, 13vh, 170px);
+  border-top: var(--rule) solid var(--ink-22);
+}
+
+.contact-label { display: flex; align-items: center; gap: 10px; opacity: 0.5; }
+
+.contact-shout { margin: clamp(14px, 2.5vh, 28px) 0 clamp(16px, 3vh, 34px); }
+
+.contact-body { opacity: 0.7; margin-bottom: clamp(26px, 5vh, 60px); }
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: clamp(18px, 3vw, 40px);
+  border-top: var(--rule) solid var(--ink-22);
+  padding-top: clamp(16px, 3vh, 30px);
+}
+
+.contact-cell { display: flex; flex-direction: column; gap: 6px; }
+
+.contact-cell > .t-mono:first-child { opacity: 0.45; }
+
+.contact-primary { grid-column: span 2; }
+
+@media (max-width: 700px) { .contact-primary { grid-column: span 1; } }
+
+.contact-email {
+  font-weight: 700;
+  font-stretch: 88%;
+  font-size: clamp(1rem, 2.1vw, 1.7rem);
+  line-height: 1.08;
+  letter-spacing: -0.012em;
+  border-bottom: 2px solid transparent;
+  transition: border-color 220ms var(--ease-out);
+  word-break: break-word;
+}
+
+.contact-email-sm { font-size: clamp(0.86rem, 1.2vw, 1rem); }
+
+.contact-email:hover, .contact-email:focus-visible { border-bottom-color: currentColor; }
+
+.contact-more { display: inline-block; margin-top: clamp(26px, 5vh, 56px); opacity: 0.6; }
+
+.contact-more:hover { opacity: 1; }
+
+/* ---------- FOOTER ---------- */
+
+.site-footer { position: relative; z-index: 1; padding-block: clamp(30px, 6vh, 70px); }
+
+.footer-shout { margin: 0 0 clamp(16px, 3vh, 30px); opacity: 0.16; }
+
+.footer-rule { height: var(--rule); background: var(--ink-22); margin-bottom: 14px; }
+
+.footer-meta { display: flex; flex-wrap: wrap; gap: 12px 28px; justify-content: space-between; opacity: 0.55; }
+
+.footer-meta a:hover { opacity: 1; text-decoration: underline; }
+
+/* ---------- REDUCED MOTION (must stay last) ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .masthead { --p: 1 !important; }
+  .wm-plate { transform: none !important; }
+  .wm-k { opacity: 1 !important; }
+  .feature-line { animation: none !important; }
+  .hold-line { --lp: 1 !important; transform: none !important; opacity: 1 !important; }
+}
+
+/* ---------- NAV ---------- */
+
+.site-nav {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 62;
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 2vw, 26px);
+  color: var(--act-ink);
+  transition: color var(--t-act) var(--ease-in-out);
+}
+
+.site-nav-mark {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 320ms var(--ease-out);
+  white-space: nowrap;
+}
+
+.site-nav-mark.is-shown { opacity: 0.9; pointer-events: auto; }
+
+.site-nav-links {
+  display: flex;
+  gap: clamp(10px, 1.8vw, 24px);
+  list-style: none;
+}
+
+.site-nav-link {
+  opacity: 0.55;
+  transition: opacity 200ms var(--ease-out);
+  /* 44px touch target without changing the 11px visual size */
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  padding: 12px 24px;
-  border-radius: 4px;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: none;
-  transition: all 200ms ease-out;
-  border: none;
-  min-height: 48px;
-  min-width: 48px;
+  min-height: 44px;
 }
 
-.btn-primary {
-  background: #ef4444;
-  color: #ffffff;
+.site-nav-link:hover, .site-nav-link.is-on { opacity: 1; }
+
+.site-nav-link.is-on { text-decoration: underline; text-underline-offset: 4px; }
+
+@media (max-width: 640px) {
+  .site-nav { gap: 10px; }
+  .site-nav-mark { display: none; }
 }
 
-.btn-primary:hover {
-  background: #dc2626;
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+/* ---------- SHARED PAGE HEAD ---------- */
+
+.page-head {
+  position: relative;
+  z-index: 1;
+  padding-top: clamp(84px, 15vh, 190px);
+  padding-bottom: clamp(20px, 4vh, 50px);
 }
 
-.btn-secondary {
-  background: transparent;
-  color: #ffffff;
-  border: 1px solid #333333;
+.page-label { display: flex; align-items: center; gap: 10px; opacity: 0.5; margin-bottom: clamp(12px, 2vh, 24px); }
+
+.page-shout { margin: 0; }
+
+.page-shout-sm { margin: 0; max-width: 16ch; }
+
+.page-body { opacity: 0.55; margin-top: clamp(12px, 2vh, 22px); }
+
+/* ---------- ABOUT ---------- */
+
+.about {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: clamp(24px, 4vw, 64px);
+  padding-block: clamp(30px, 6vh, 80px);
+  border-top: var(--rule) solid var(--ink-22);
 }
 
-.btn-secondary:hover {
-  border-color: #ef4444;
-  color: #ef4444;
+.about-col { display: flex; flex-direction: column; gap: 10px; }
+
+.about-label { opacity: 0.45; }
+
+.about-lead { margin: 0; }
+
+.about-list { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+
+.about-item { font-weight: 600; font-stretch: 88%; font-size: clamp(0.9rem, 1.3vw, 1.1rem); opacity: 0.75; }
+
+.clients {
+  position: relative;
+  z-index: 1;
+  padding-block: clamp(40px, 8vh, 110px);
+  border-top: var(--rule) solid var(--ink-22);
 }
+
+.clients-list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 clamp(16px, 2.4vw, 42px);
+  margin-top: clamp(14px, 3vh, 30px);
+}
+
+.clients-item {
+  font-size: clamp(1.4rem, 5.2vw, 5rem);
+  line-height: 1.02;
+  opacity: 0.22;
+  transition: opacity 260ms var(--ease-out);
+  cursor: default;
+}
+
+.clients-item:hover { opacity: 1; }
+
+/* ---------- CASE STUDY ---------- */
+
+.cs-hero {
+  position: relative;
+  z-index: 1;
+  height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+
+.cs-hero-media { position: absolute; inset: 0; }
+
+/* The <img> is the floor: it is what shows with no WebGL, and what the
+   canvas paints over once the shader is confirmed working. */
+.cs-hero-img { width: 100%; height: 100%; object-fit: cover; }
+
+.cs-hero-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 240ms var(--ease-out);
+}
+
+.cs-hero-canvas.is-live { opacity: 1; }
+
+.cs-hero-caption {
+  position: relative;
+  z-index: 2;
+  padding-bottom: clamp(28px, 6vh, 72px);
+  color: var(--paper);
+  text-shadow: 0 1px 24px rgba(0, 0, 0, 0.45);
+}
+
+.cs-hero-client { opacity: 0.8; }
+
+.cs-hero-title { margin: 6px 0 8px; }
+
+.cs-hero-meta { opacity: 0.7; }
+
+.cs-brief {
+  position: relative;
+  z-index: 1;
+  padding-block: clamp(50px, 11vh, 140px);
+}
+
+.cs-label { display: flex; align-items: center; gap: 10px; opacity: 0.5; margin-bottom: clamp(14px, 3vh, 30px); }
+
+.cs-copy { margin: 0; max-width: 26ch; }
+
+.cs-plates { position: relative; z-index: 1; padding-bottom: clamp(40px, 8vh, 110px); }
+
+.cs-plate-grid { list-style: none; row-gap: clamp(20px, 4vh, 56px); }
+
+.cs-plate { grid-column: span var(--span, 6); position: relative; min-width: 0; }
+
+@media (max-width: 900px) { .cs-plate { grid-column: span 6; } }
+
+.cs-plate-img { width: 100%; aspect-ratio: 3 / 2; }
+
+.cs-plate-num { position: absolute; top: 8px; left: 8px; opacity: 0.6; mix-blend-mode: difference; color: var(--paper); }
+
+.cs-nav {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding-block: clamp(30px, 6vh, 80px);
+  border-top: var(--rule) solid var(--ink-22);
+}
+
+.cs-nav-link { display: flex; flex-direction: column; gap: 6px; max-width: 44%; }
+
+.cs-nav-next { text-align: right; margin-left: auto; }
+
+.cs-nav-title { font-weight: 700; font-stretch: 88%; font-size: clamp(0.95rem, 1.8vw, 1.5rem); line-height: 1.1; }
+
+.cs-nav-link:hover .cs-nav-title { text-decoration: underline; text-underline-offset: 4px; }
+
+/* ---------- REDUCED MOTION (stays last) ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .clients-item { opacity: 0.7; }
+}
+
+/* ============================================================
+   MASTHEAD CORRECTIONS
+   The wordmark is set on two lines so COLVILL can be enormous without
+   running off the right edge, and the (R) sits as a true superscript
+   the way it does in his own mark.
+   ============================================================ */
+
+.t-wordmark {
+  font-size: clamp(2.4rem, 26.5vw, 19rem);
+  line-height: 0.78;
+}
+
+.wm-line { display: block; white-space: nowrap; }
+
+.wm-reg {
+  font-size: 0.26em;
+  vertical-align: super;
+  line-height: 1;
+  letter-spacing: 0;
+  margin-right: 0.04em;
+}
+
+/* Plates are ink on paper, not neon. Multiply plus a held-back opacity
+   keeps this reading as a misprint rather than as a rainbow. */
+.wm-plate:not(.wm-k) { opacity: calc(0.72 - 0.72 * var(--p)); }
+
+.masthead { overflow: hidden; }
+
+/* The featured work, sitting in what was dead space between the wordmark
+   and the strap. Registers on the same scroll as everything else. */
+.masthead-plate {
+  position: absolute;
+  right: var(--margin);
+  top: 46%;
+  width: clamp(150px, 26vw, 400px);
+  aspect-ratio: 3 / 4;
+  isolation: isolate;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.mp-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  mix-blend-mode: multiply;
+  animation: plate-in 700ms var(--ease-out) both;
+}
+
+.mp-c { transform: translate3d(calc((1 - var(--p)) * -13px), calc((1 - var(--p)) *  6px), 0); filter: url(#none) saturate(0) sepia(1) hue-rotate(150deg); opacity: 0.55; }
+.mp-m { transform: translate3d(calc((1 - var(--p)) *  10px), calc((1 - var(--p)) * -8px), 0); filter: saturate(0) sepia(1) hue-rotate(280deg); opacity: 0.55; }
+.mp-k { opacity: calc(0.45 + 0.55 * var(--p)); }
+
+@keyframes plate-in {
+  from { opacity: 0; }
+}
+
+@media (max-width: 900px) {
+  .masthead-plate {
+    top: auto;
+    bottom: 30%;
+    width: 40vw;
+  }
+}
+
+/* ---------- MOBILE HUD / NAV COLLISION ----------
+   At narrow widths the left HUD block and the centred nav overlap. The
+   HUD is furniture; the nav is navigation, so the HUD gives way. */
+@media (max-width: 860px) {
+  .hud-l, .hud-r { display: none; }
+  .site-nav { top: 12px; }
+}
+
+@media (max-width: 640px) {
+  .masthead { padding-top: 64px; }
+}
+
+/* ---------- REDUCED MOTION (stays last) ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .mp-img { animation: none !important; transform: none !important; }
+  .wm-plate:not(.wm-k) { opacity: 0 !important; }
+}
+
+/* ============================================================
+   MASTHEAD FIT
+   Sizing COLVILL by vw alone clipped its final L. The cap width of this
+   condensed face measures ~0.52em, so seven caps need ~3.8em; size the
+   wordmark off the ACTUAL available width instead and it can never clip.
+   ============================================================ */
+
+.t-wordmark {
+  font-size: min(23vw, calc((100vw - (2 * var(--margin))) / 3.8), 17rem);
+}
+
+.wordmark { position: relative; z-index: 2; }
+
+.masthead-foot { position: relative; z-index: 2; }
+
+/* The featured plate sits BEHIND the wordmark and bleeds off the right
+   edge — texture, not a competing element. It was previously landing on
+   top of the featured caption and making both unreadable. */
+.masthead-plate {
+  right: 0;
+  top: 14%;
+  bottom: auto;
+  width: clamp(150px, 25vw, 380px);
+  height: 52vh;
+  aspect-ratio: auto;
+  z-index: 0;
+  opacity: 0.55;
+}
+
+@media (max-width: 900px) {
+  .masthead-plate {
+    top: 12%;
+    bottom: auto;
+    width: 46vw;
+    height: 34vh;
+    opacity: 0.4;
+  }
+}
+
+/* The bottom HUD belongs to the masthead. Once the page scrolls it would
+   sit on top of real captions, so it retires rather than collides. */
+.hud-b, .hud-br {
+  transition: opacity 320ms var(--ease-out), visibility 320ms;
+}
+
+.hud-b.is-retired, .hud-br.is-retired {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* The hero caption sits over an image that is, by design, chaotic at rest.
+   A scrim is the only way it stays readable through the whole scrub. */
+.cs-hero-caption::before {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 340px;
+  background: linear-gradient(to top, rgba(9, 16, 23, 0.82), rgba(9, 16, 23, 0));
+  z-index: -1;
+  pointer-events: none;
+}
+
+.cs-hero-caption { isolation: isolate; }
+
+/* The nav and HUD sit over the hero photograph, which can be light or dark
+   at the top edge depending on the shot. A top scrim guarantees the
+   furniture stays readable on every case study. */
+.cs-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 190px;
+  background: linear-gradient(to bottom, rgba(9, 16, 23, 0.55), rgba(9, 16, 23, 0));
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* On a case study the furniture always sits on the photograph, never on
+   the act ground, so it is always paper-coloured there. */
+.cs-hero ~ * { position: relative; }
