@@ -1239,10 +1239,16 @@ a {
 }
 
 /* ============================================================
-   PORTFOLIO CAROUSEL — the pinned dark act.
-   Structure follows the Stride reference (centred panel, counter far
-   left, CTA far right, light spill along the bottom); the palette stays
-   his, so the spill is paper rather than electric blue.
+   THE WORK BANNER — depth stack
+   Every dimension resolves from the 12-column grid, never from an
+   eyeballed viewport percentage.
+
+   With content width W and gutter g, a span of 8 columns is:
+     col   = (W - 11g) / 12
+     span8 = 8col + 7g = (2W - g) / 3
+   Expressed against the stage (whose width IS W), that is
+   calc((2 * 100% - var(--gutter)) / 3) — exact, and free of the
+   scrollbar error that 100vw carries.
    ============================================================ */
 
 .pf {
@@ -1263,35 +1269,83 @@ a {
 .pf-spill {
   position: absolute;
   left: 50%;
-  bottom: -46vh;
+  bottom: -18vh;
   transform: translateX(-50%);
   width: 150vw;
-  height: 70vh;
+  height: 56vh;
   pointer-events: none;
   background: radial-gradient(
     ellipse at 50% 100%,
-    rgba(240, 240, 239, 0.5) 0%,
-    rgba(240, 240, 239, 0.16) 34%,
-    rgba(240, 240, 239, 0) 68%
+    rgba(240, 240, 239, 0.4) 0%,
+    rgba(240, 240, 239, 0.12) 40%,
+    rgba(240, 240, 239, 0) 72%
   );
 }
 
+/* Column 1 left edge. */
 .pf-count {
   position: absolute;
   left: var(--margin);
   top: 50%;
   transform: translateY(-50%);
+  z-index: 40;
   opacity: 0.8;
   font-variant-numeric: tabular-nums;
 }
 
+/* Column 12 right edge. */
+.pf-cta {
+  position: absolute;
+  right: var(--margin);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 12px 20px;
+  border: var(--rule) solid rgba(240, 240, 239, 0.4);
+  border-radius: 999px;
+  color: var(--paper);
+  transition: background 240ms var(--ease-out), border-color 240ms var(--ease-out),
+    color 240ms var(--ease-out);
+}
+
+.pf-cta:hover,
+.pf-cta:focus-visible {
+  background: var(--paper);
+  border-color: var(--paper);
+  color: var(--ink);
+}
+
+/* ---------- the stage ---------- */
+
 .pf-stage {
   position: relative;
   z-index: 2;
-  width: min(56vw, 900px);
+  width: 100%;              /* == W, the grid content width */
+  max-width: 1600px;
+  height: 74vh;
 }
 
-.pf-panel {
+.pf.is-3d .pf-stage {
+  perspective: 1200px;
+  perspective-origin: 50% 46%;
+  transform-style: preserve-3d;
+}
+
+.pf.is-3d .pf-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc((2 * 100% - var(--gutter)) / 3);   /* exactly 8 of 12 cols */
+  transform: translate3d(-50%, -50%, 0);
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+}
+
+.pf-plate {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 10;
@@ -1311,46 +1365,74 @@ a {
 /* Once the shader is confirmed running, the fallback <img> steps aside. */
 .pf-img.is-hidden { opacity: 0; }
 
+/* Caption locks to the card's own left edge — a fixed relationship to the
+   grid rather than to the viewport. Baselines stay consistent because the
+   three lines share one flow. */
+.pf-caption {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: var(--gutter);
+  align-items: baseline;
+  margin-top: 18px;
+}
+
+.pf-num {
+  opacity: 0.55;
+  font-variant-numeric: tabular-nums;
+}
+
 .pf-title {
-  position: absolute;
-  inset: 0;
+  grid-column: 2;
+  font-size: clamp(1rem, 1.9vw, 1.6rem);
+  color: var(--paper);
+  line-height: 1.06;
+}
+
+.pf-client {
+  grid-column: 2;
+  opacity: 0.55;
+  margin-top: 6px;
+}
+
+/* Only the front card's caption is legible; the queue behind it stays
+   quiet so the composition never reads as clutter. */
+.pf.is-3d .pf-card:not(.is-front) .pf-caption { opacity: 0.25; }
+
+/* ---------- touch: a flat scroll-snap row, no pin, no 3D ---------- */
+
+.pf.is-row { min-height: auto; padding-block: 14vh; }
+
+.pf.is-row .pf-stage {
+  height: auto;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 0 6%;
-  font-size: clamp(1.4rem, 4vw, 3.4rem);
-  color: var(--paper);
-  text-shadow: 0 2px 30px rgba(0, 0, 0, 0.7);
-  pointer-events: none;
+  gap: var(--gutter);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 8px;
 }
 
-.pf-cta {
-  position: absolute;
-  right: var(--margin);
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 3;
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 12px 20px;
-  border: var(--rule) solid rgba(240, 240, 239, 0.4);
-  border-radius: 999px;
-  color: var(--paper);
-  transition: background 240ms var(--ease-out), border-color 240ms var(--ease-out);
+.pf.is-row .pf-stage::-webkit-scrollbar { display: none; }
+
+.pf.is-row .pf-card {
+  position: relative;
+  flex: 0 0 82%;
+  scroll-snap-align: center;
 }
 
-.pf-cta:hover,
-.pf-cta:focus-visible {
-  background: var(--paper);
-  border-color: var(--paper);
-  color: var(--ink);
+.pf.is-row .pf-count,
+.pf.is-row .pf-cta {
+  position: static;
+  transform: none;
+  margin-inline: auto;
 }
 
-/* The carousel is a scroll device. This list is the real navigation:
-   hidden visually, but every project stays keyboard reachable and is
-   announced in order. Focus brings it back on screen. */
+.pf.is-row .pf-cta { margin-top: 22px; }
+.pf.is-row .pf-count { margin-bottom: 14px; }
+
+/* ---------- the real navigation ---------- */
+
 .pf-index {
   position: absolute;
   width: 1px;
@@ -1371,25 +1453,30 @@ a {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  z-index: 5;
+  z-index: 50;
 }
 
-.pf-index-link { color: var(--paper); opacity: 0.75; display: inline-flex; gap: 10px; min-height: 32px; align-items: center; }
-.pf-index-link:hover, .pf-index-link.is-on { opacity: 1; }
-.pf-index-num { opacity: 0.6; }
-
-@media (max-width: 900px) {
-  .pf-stage { width: 86vw; }
-  .pf-count { top: 16%; transform: none; }
-  .pf-cta { top: auto; bottom: 12vh; right: 50%; transform: translateX(50%); }
+.pf-index-link {
+  color: var(--paper);
+  opacity: 0.75;
+  display: inline-flex;
+  gap: 10px;
+  min-height: 32px;
+  align-items: center;
 }
 
-/* Reduced motion: the section never pins, so the carousel cannot advance.
-   The index list becomes the visible, complete navigation instead — the
-   content is never unreachable. */
+.pf-index-link:hover,
+.pf-index-link.is-on { opacity: 1; }
+.pf-index-num { opacity: 0.6; font-variant-numeric: tabular-nums; }
+
+/* Wrapper around every pinned section: ScrollTrigger's pin-spacer is
+   inserted inside a node React owns, so unmount never hits a reparented
+   child. */
+.pin-host { position: relative; }
+
+/* Reduced motion: no pin is created, so the stack never advances. The
+   index list becomes the visible, complete navigation. */
 @media (prefers-reduced-motion: reduce) {
-  .pf { min-height: auto; padding-block: 12vh; flex-direction: column; gap: 28px; }
-  .pf-count, .pf-cta { position: static; transform: none; }
   .pf-index {
     position: static;
     width: auto;
@@ -1402,42 +1489,134 @@ a {
   }
 }
 
-/* The spill was sitting almost entirely below the fold — its brightest
-   point (the ellipse base) was off-screen, so only the faintest outer
-   falloff showed. Raise it so the light actually reaches the panel. */
-.pf-spill {
-  bottom: -18vh;
-  height: 56vh;
-  background: radial-gradient(
-    ellipse at 50% 100%,
-    rgba(240, 240, 239, 0.42) 0%,
-    rgba(240, 240, 239, 0.13) 40%,
-    rgba(240, 240, 239, 0) 72%
-  );
+/* The front slot: one canvas parked where a card comes to rest. Same grid
+   width as a card, so the registration lands exactly on the plate. */
+.pf-front {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc((2 * 100% - var(--gutter)) / 3);
+  aspect-ratio: 16 / 10;
+  transform: translate3d(-50%, -50%, 0);
+  transform-style: preserve-3d;
+  pointer-events: none;
+  opacity: 0;
+  overflow: hidden;
+  background: #0d141c;
 }
 
-/* Project name moved out from over the plate to a caption beneath it. */
+.pf-front .pf-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* The card caption must clear the plate, which the slot now overlays. */
+.pf.is-3d .pf-card { padding-bottom: 0; }
+
+/* ============================================================
+   MASTHEAD FOOT — black band
+   The lower band of the landing page runs ink with paper text: the
+   strap, the featured strap and every piece of small text in it. It
+   bleeds the full width by cancelling the section's own inline padding.
+   ============================================================ */
+
+.masthead { padding-bottom: 0; }
+
+.masthead-foot {
+  background: var(--ink);
+  color: var(--paper);
+  margin-inline: calc(-1 * var(--margin));
+  padding: clamp(22px, 4vh, 44px) var(--margin) clamp(26px, 5vh, 52px);
+  align-items: flex-end;
+}
+
+/* Rules and dots were keyed to ink; on the band they must key to paper. */
+.masthead-foot .masthead-feature { border-top-color: rgba(240, 240, 239, 0.32); }
+.masthead-foot .feature-dot { background: rgba(240, 240, 239, 0.3); }
+.masthead-foot .feature-dot.is-on { background: var(--paper); }
+.masthead-foot .feature-client { opacity: 0.72; }
+
+/* The two bottom HUD blocks only ever appear over this band (they retire
+   on scroll), so they read as paper too. */
+.hud-b, .hud-br { color: var(--paper); }
+
+/* The foot band goes on the 12-column grid rather than being sized in ch.
+   The strap holds columns 1-7, the featured block columns 9-12, so both
+   edges land on real column lines. Bottom padding clears the fixed HUD,
+   which was sitting on the descender of STUDIO. */
+.masthead-foot {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  gap: var(--gutter);
+  align-items: end;
+  padding-bottom: clamp(46px, 7.5vh, 82px);
+}
+
+.masthead-strap { grid-column: 1 / span 7; flex: none; }
+.masthead-feature { grid-column: 9 / span 4; flex: none; }
+
+@media (max-width: 900px) {
+  /* 6 columns at this width: the two blocks stack, both full width. */
+  .masthead-strap { grid-column: 1 / span 6; }
+  .masthead-feature { grid-column: 1 / span 6; margin-top: 22px; }
+}
+
+/* The card box must equal the PLATE box. The caption was inside the flow,
+   so the card's centre sat below the plate's centre — and the front slot,
+   which centres on the card, landed on top of the caption. The caption now
+   hangs below the box, so card centre == plate centre == slot centre. */
+.pf.is-3d .pf-card {
+  aspect-ratio: 16 / 10;
+}
+
+.pf.is-3d .pf-plate {
+  position: absolute;
+  inset: 0;
+  aspect-ratio: auto;
+}
+
+.pf.is-3d .pf-caption {
+  position: absolute;
+  top: calc(100% + 18px);
+  left: 0;
+  right: 0;
+  margin-top: 0;
+}
+
+/* The figure hangs in the margin so the TITLE aligns exactly to the plate
+   edge — i.e. to column 3 — rather than being indented off it. */
 .pf-caption {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  margin-top: clamp(14px, 2.4vh, 26px);
-  text-align: center;
+  position: relative;
+  display: block;
 }
 
-.pf-title {
+.pf-num {
+  position: absolute;
+  right: calc(100% + var(--gutter));
+  top: 0;
+  white-space: nowrap;
+}
+
+.pf-title { display: block; }
+.pf-client { display: block; }
+
+/* In row mode the counter and CTA become static, so they turn into flex
+   siblings of the stage and squeeze it (228px inside a 390px viewport).
+   Stack them instead. */
+.pf.is-row {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+.pf.is-row .pf-stage { width: 100%; flex: none; }
+.pf.is-row .pf-count { align-self: flex-start; }
+.pf.is-row .pf-cta { align-self: center; }
+
+/* The hanging figure is a desktop device: inside the horizontal scroll
+   container it hangs outside the card and gets clipped. In row mode it
+   sits above the title instead. */
+.pf.is-row .pf-num {
   position: static;
   display: block;
-  inset: auto;
-  padding: 0;
-  color: var(--paper);
-  text-shadow: none;
-  font-size: clamp(1.1rem, 2.6vw, 2.2rem);
+  margin-bottom: 6px;
 }
 
-.pf-client { opacity: 0.62; }
-
-/* Wrapper around every pinned section — see the components for why. It
-   must not introduce a stacking or layout change of its own. */
-.pin-host { position: relative; }
+.pf.is-row .pf-caption { margin-top: 14px; }
