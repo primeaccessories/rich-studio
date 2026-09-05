@@ -33,6 +33,11 @@ export default function StatementHold() {
       split = new SplitText(target, {
         type: 'lines',
         linesClass: 'hold-line',
+        // SplitText's default aria:"auto" stamps an aria-label onto the
+        // element, which is prohibited on a <p> with no role and fails
+        // axe's aria-prohibited-attr. Splitting by LINES leaves the DOM in
+        // reading order, so the label buys nothing here anyway.
+        aria: 'none',
       });
 
       gsap.set(split.lines, { '--lp': 0 });

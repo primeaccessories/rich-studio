@@ -1189,3 +1189,43 @@ a {
 /* On a case study the furniture always sits on the photograph, never on
    the act ground, so it is always paper-coloured there. */
 .cs-hero ~ * { position: relative; }
+
+/* ============================================================
+   CONTRAST CORRECTIONS
+   Measured with Lighthouse/axe against the real #f0f0ef ground. Opacity
+   on ink is what set these; every value below is the level that clears
+   WCAG AA (4.5:1 body, 3:1 for large display).
+   ============================================================ */
+
+/* Small mono furniture was #7d8083 on paper = 3.48:1. */
+.facet legend,
+.facet-btn,
+.work-count,
+.work-num,
+.work-facet,
+.about-label,
+.page-label,
+.hold-label,
+.contact-label,
+.cs-label,
+.contact-cell > .t-mono:first-child { opacity: 0.72; }
+
+.hud { opacity: 0.8; }
+.site-nav-link { opacity: 0.72; }
+.feature-client { opacity: 0.78; }
+.footer-meta { opacity: 0.78; }
+.page-body, .contact-body, .hold-body { opacity: 0.82; }
+
+/* Large display type needs 3:1, not 4.5:1 — but 0.16 and 0.22 were far
+   under even that. These stay quiet, just not invisible. */
+.footer-shout { opacity: 0.5; }
+.clients-item { opacity: 0.5; }
+
+/* The statement's resting state was 0.12 and unreadable before its line
+   animated in. It still visibly registers, from a legible floor. */
+.hold-line { opacity: calc(0.45 + 0.55 * var(--lp)); }
+
+/* The wordmark composited to #929597 = 2.64:1 against paper. The black
+   key plate now carries more weight at rest, so it reads as ink even
+   before it registers. */
+.wm-k { opacity: calc(0.42 + 0.58 * var(--p)); }
