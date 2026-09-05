@@ -39,6 +39,25 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en-GB">
+      <head>
+        {/* The LCP element is the wordmark TEXT, and 92% of its time was
+            render delay waiting on these two faces. Preloading them is the
+            single biggest mobile win available. */}
+        <link
+          rel="preload"
+          href="/fonts/HelveticaCondensed-Regular.woff"
+          as="font"
+          type="font/woff"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preload"
+          href="/fonts/Archivo-Variable.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body>
         <a href="#main" className="skip-link t-mono">
           Skip to content

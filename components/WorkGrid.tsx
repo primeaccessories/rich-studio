@@ -100,10 +100,13 @@ export default function WorkGrid({
             >
               <Link href={`/work/${w.slug}`} className="work-link">
                 <RegisteredImage
-                  src={w.images[0].src}
+                  src={w.thumb}
                   alt={`${w.client} — ${w.title}`}
                   className="work-thumb"
-                  priority={i < 3}
+                  /* Nothing here is above the fold on a phone. Eagerly
+                     fetching three 1600px heroes was starving the fonts
+                     that the text LCP is waiting on. */
+                  priority={false}
                 />
                 <div className="work-cap">
                   <span className="t-mono t-mono-b work-num">

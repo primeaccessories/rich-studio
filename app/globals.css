@@ -1229,3 +1229,11 @@ a {
    key plate now carries more weight at rest, so it reads as ink even
    before it registers. */
 .wm-k { opacity: calc(0.42 + 0.58 * var(--p)); }
+
+/* The strap re-runs its entry animation every rotation, and axe sampled it
+   mid-fade at #abadae (1.97:1). Animate position and focus instead of
+   opacity so the text is never below contrast at any point in the tween. */
+@keyframes strap-register {
+  from { transform: translate3d(-0.35em, 0, 0); filter: blur(1.6px); }
+  to   { transform: none; filter: none; }
+}

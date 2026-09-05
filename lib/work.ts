@@ -16,6 +16,8 @@ export interface WorkItem {
   /** Body copy verbatim — he writes in caps and we do not fight it. */
   description: string;
   images: WorkImage[];
+  /** 720px derivative for grid tiles and the masthead plate. */
+  thumb: string;
   /** The act ground, sampled from this project's own artwork. */
   ground: string;
   groundInk: string;

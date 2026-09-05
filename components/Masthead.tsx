@@ -92,10 +92,14 @@ export default function Masthead() {
         {(['c', 'm', 'k'] as const).map((plate) => (
           <img
             key={plate}
-            src={`/work/${current.slug}/00.webp`}
+            src={`/work/${current.slug}/thumb.webp`}
             alt=""
             className={`mp-img mp-${plate}`}
-            fetchPriority={plate === 'k' ? 'high' : 'low'}
+            /* Never high: the LCP here is the wordmark TEXT, so this image
+               must not compete with the font it is waiting on. */
+            fetchPriority="low"
+            loading="lazy"
+            decoding="async"
           />
         ))}
       </div>
