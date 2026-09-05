@@ -1681,3 +1681,22 @@ a {
 .hold-copy {
   font-size: clamp(1.25rem, min(2.9vw, calc((100svh - 320px) / 15)), 2.45rem);
 }
+
+/* The band carries ink down behind it as it rises, so the hero turns black
+   from the bottom up rather than leaving paper underneath. */
+.masthead-foot { position: relative; will-change: transform; }
+
+.masthead-foot::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 100svh;
+  background: var(--ink);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .masthead-foot { transform: none !important; }
+}

@@ -38,17 +38,45 @@ export default function Masthead() {
     }
 
     gsap.registerPlugin(ScrollTrigger);
+
+    const band = el.querySelector<HTMLElement>('.masthead-foot');
+
     const st = ScrollTrigger.create({
       trigger: el,
       start: 'top top',
-      end: '+=70%',
+      end: '+=110%',
+      pin: true,
       scrub: 0.6,
+      invalidateOnRefresh: true,
       onUpdate: (self) => {
-        // Travel from the resting 0.34 up to full register.
-        el.style.setProperty('--p', (0.34 + self.progress * 0.66).toFixed(3));
+        const t = self.progress;
+
+        // The wordmark registers over the first half of the travel.
+        el.style.setProperty('--p', (0.34 + Math.min(1, t / 0.5) * 0.66).toFixed(3));
+
+        // Black Ink's move, in his words via the Black Ink build: "the
+        // banner should scroll up and sit under the nav". The band rises
+        // from the foot of the hero to just under the header, and its
+        // ::after carries the ink down behind it so the page turns black
+        // from the bottom up — handing straight over to the dark carousel.
+        if (band) {
+          const capTop = 58; // clears the nav strip
+          const travel = Math.max(
+            0,
+            window.innerHeight - band.offsetHeight - capTop,
+          );
+          band.style.transform = `translate3d(0, ${(-travel * t).toFixed(1)}px, 0)`;
+        }
       },
     });
-    return () => st.kill();
+
+    return () => {
+      // kill(true) reverts the pin; ScrollTrigger reparents the pinned
+      // element into a .pin-spacer and React unmounts against a stale
+      // parent otherwise.
+      st.kill(true);
+      if (band) band.style.transform = '';
+    };
   }, []);
 
   // Strap rotation is the one thing that moves on its own, and only
@@ -65,6 +93,7 @@ export default function Masthead() {
   const current = STRAPS[strap];
 
   return (
+    <div className="pin-host">
     <section
       ref={root}
       className="masthead sheet"
@@ -139,5 +168,6 @@ export default function Masthead() {
         </div>
       </div>
     </section>
+    </div>
   );
 }
