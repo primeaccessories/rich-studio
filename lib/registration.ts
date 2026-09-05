@@ -143,6 +143,10 @@ void main() {
 export interface RegistrationHandle {
   /** Set registration progress, 0 (misprint) .. 1 (true image). */
   setProgress(p: number): void;
+  /** Swap the plate being printed, reusing the same GL context. The
+   *  carousel steps through nine projects and must not create nine
+   *  contexts to do it. */
+  setImage(img: HTMLImageElement): void;
   /** Recompute buffer size after a layout change. */
   resize(): void;
   destroy(): void;
@@ -276,6 +280,14 @@ export function createRegistration(
       const next = Math.min(1, Math.max(0, p));
       if (Math.abs(next - progress) < 0.001) return;
       progress = next;
+      schedule();
+    },
+    setImage(img: HTMLImageElement) {
+      if (destroyed || !img.naturalWidth) return;
+      gl.useProgram(prog);
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+      gl.uniform2f(uImgRes, img.naturalWidth, img.naturalHeight);
       schedule();
     },
     resize,

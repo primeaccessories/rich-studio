@@ -1237,3 +1237,207 @@ a {
   from { transform: translate3d(-0.35em, 0, 0); filter: blur(1.6px); }
   to   { transform: none; filter: none; }
 }
+
+/* ============================================================
+   PORTFOLIO CAROUSEL — the pinned dark act.
+   Structure follows the Stride reference (centred panel, counter far
+   left, CTA far right, light spill along the bottom); the palette stays
+   his, so the spill is paper rather than electric blue.
+   ============================================================ */
+
+.pf {
+  position: relative;
+  z-index: 1;
+  min-height: 100svh;
+  background: var(--ink);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding-inline: var(--margin);
+}
+
+/* Light spilling up off the bottom edge, as if the sheet is lit from
+   under the press bed. */
+.pf-spill {
+  position: absolute;
+  left: 50%;
+  bottom: -46vh;
+  transform: translateX(-50%);
+  width: 150vw;
+  height: 70vh;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 50% 100%,
+    rgba(240, 240, 239, 0.5) 0%,
+    rgba(240, 240, 239, 0.16) 34%,
+    rgba(240, 240, 239, 0) 68%
+  );
+}
+
+.pf-count {
+  position: absolute;
+  left: var(--margin);
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+}
+
+.pf-stage {
+  position: relative;
+  z-index: 2;
+  width: min(56vw, 900px);
+}
+
+.pf-panel {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #0d141c;
+}
+
+.pf-img,
+.pf-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Once the shader is confirmed running, the fallback <img> steps aside. */
+.pf-img.is-hidden { opacity: 0; }
+
+.pf-title {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 6%;
+  font-size: clamp(1.4rem, 4vw, 3.4rem);
+  color: var(--paper);
+  text-shadow: 0 2px 30px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+
+.pf-cta {
+  position: absolute;
+  right: var(--margin);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 12px 20px;
+  border: var(--rule) solid rgba(240, 240, 239, 0.4);
+  border-radius: 999px;
+  color: var(--paper);
+  transition: background 240ms var(--ease-out), border-color 240ms var(--ease-out);
+}
+
+.pf-cta:hover,
+.pf-cta:focus-visible {
+  background: var(--paper);
+  border-color: var(--paper);
+  color: var(--ink);
+}
+
+/* The carousel is a scroll device. This list is the real navigation:
+   hidden visually, but every project stays keyboard reachable and is
+   announced in order. Focus brings it back on screen. */
+.pf-index {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  list-style: none;
+}
+
+.pf-index:focus-within {
+  position: absolute;
+  left: var(--margin);
+  bottom: 24px;
+  width: auto;
+  height: auto;
+  clip: auto;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 5;
+}
+
+.pf-index-link { color: var(--paper); opacity: 0.75; display: inline-flex; gap: 10px; min-height: 32px; align-items: center; }
+.pf-index-link:hover, .pf-index-link.is-on { opacity: 1; }
+.pf-index-num { opacity: 0.6; }
+
+@media (max-width: 900px) {
+  .pf-stage { width: 86vw; }
+  .pf-count { top: 16%; transform: none; }
+  .pf-cta { top: auto; bottom: 12vh; right: 50%; transform: translateX(50%); }
+}
+
+/* Reduced motion: the section never pins, so the carousel cannot advance.
+   The index list becomes the visible, complete navigation instead — the
+   content is never unreachable. */
+@media (prefers-reduced-motion: reduce) {
+  .pf { min-height: auto; padding-block: 12vh; flex-direction: column; gap: 28px; }
+  .pf-count, .pf-cta { position: static; transform: none; }
+  .pf-index {
+    position: static;
+    width: auto;
+    height: auto;
+    clip: auto;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+
+/* The spill was sitting almost entirely below the fold — its brightest
+   point (the ellipse base) was off-screen, so only the faintest outer
+   falloff showed. Raise it so the light actually reaches the panel. */
+.pf-spill {
+  bottom: -18vh;
+  height: 56vh;
+  background: radial-gradient(
+    ellipse at 50% 100%,
+    rgba(240, 240, 239, 0.42) 0%,
+    rgba(240, 240, 239, 0.13) 40%,
+    rgba(240, 240, 239, 0) 72%
+  );
+}
+
+/* Project name moved out from over the plate to a caption beneath it. */
+.pf-caption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: clamp(14px, 2.4vh, 26px);
+  text-align: center;
+}
+
+.pf-title {
+  position: static;
+  display: block;
+  inset: auto;
+  padding: 0;
+  color: var(--paper);
+  text-shadow: none;
+  font-size: clamp(1.1rem, 2.6vw, 2.2rem);
+}
+
+.pf-client { opacity: 0.62; }
+
+/* Wrapper around every pinned section — see the components for why. It
+   must not introduce a stacking or layout change of its own. */
+.pin-host { position: relative; }

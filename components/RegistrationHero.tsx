@@ -83,12 +83,19 @@ export default function RegistrationHero({
       cancelled = true;
       img.removeEventListener('load', start);
       ro?.disconnect();
-      st?.kill();
+      // kill(true) REVERTS the pin. ScrollTrigger's pin wraps this element
+      // in a .pin-spacer, which changes its DOM parent; without the revert
+      // React unmounts against a stale parent and throws
+      // "removeChild: node is not a child of this node".
+      st?.kill(true);
       handle?.destroy();
     };
   }, []);
 
   return (
+    /* See PortfolioCarousel: the pin reparents this node, so React needs a
+       wrapper it can safely remove. */
+    <div className="pin-host">
     <div ref={root} className="cs-hero">
       <div className="cs-hero-media">
         <img ref={imgRef} src={src} alt={alt} className="cs-hero-img" />
@@ -100,6 +107,7 @@ export default function RegistrationHero({
         <h1 className="t-display cs-hero-title">{title}</h1>
         <span className="t-mono cs-hero-meta">{meta}</span>
       </div>
+    </div>
     </div>
   );
 }

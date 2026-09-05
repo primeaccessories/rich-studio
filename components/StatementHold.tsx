@@ -70,6 +70,7 @@ export default function StatementHold() {
   }, []);
 
   return (
+    <div className="pin-host">
     <div ref={root} className="hold">
       <div className="sheet hold-inner">
         <span className="t-mono hold-label">
@@ -92,6 +93,7 @@ export default function StatementHold() {
           SONY, PENHALIGON&#39;S, CLOUD NINE AND MOLTON BROWN
         </p>
       </div>
+    </div>
     </div>
   );
 }

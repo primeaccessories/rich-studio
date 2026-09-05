@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import RegisteredImage from './RegisteredImage';
+import { useDropTransition } from './DropTransition';
 import type { WorkItem } from '@/lib/work';
 
 /**
@@ -33,6 +34,7 @@ export default function WorkGrid({
 }) {
   const [disc, setDisc] = useState('ALL');
   const [ind, setInd] = useState('ALL');
+  const drop = useDropTransition();
 
   const filtered = useMemo(
     () =>
@@ -98,7 +100,19 @@ export default function WorkGrid({
               className="work-tile"
               style={{ ['--span' as string]: SPANS[i % SPANS.length] }}
             >
-              <Link href={`/work/${w.slug}`} className="work-link">
+              <Link
+                href={`/work/${w.slug}`}
+                className="work-link"
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                  e.preventDefault();
+                  drop(
+                    `/work/${w.slug}`,
+                    e.currentTarget.querySelector<HTMLElement>('.work-thumb'),
+                    w.thumb,
+                  );
+                }}
+              >
                 <RegisteredImage
                   src={w.thumb}
                   alt={`${w.client} — ${w.title}`}
