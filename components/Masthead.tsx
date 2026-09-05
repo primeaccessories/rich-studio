@@ -109,6 +109,16 @@ export default function Masthead() {
          first paint reads as broken rather than as a deliberate misprint. */
       style={{ ['--p' as string]: '0.34' }}
     >
+      {/* His creature mark leads the lockup: mark, then the (R), then the
+          name. Drawn as an alpha mask filled with currentColor so each ink
+          plate tints it and it registers with the wordmark rather than
+          sitting outside the effect as a flat image. */}
+      <div className="creature" aria-hidden="true">
+        {(['c', 'm', 'y', 'k'] as const).map((plate) => (
+          <span key={plate} className={`cr-plate cr-${plate}`} />
+        ))}
+      </div>
+
       <h1 className="wordmark t-wordmark">
         <span className="wordmark-stack" aria-hidden="true">
           {(['c', 'm', 'y', 'k'] as const).map((plate) => (

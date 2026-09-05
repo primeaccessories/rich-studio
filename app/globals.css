@@ -1786,3 +1786,98 @@ a {
    71px font-size, so it needed raising by 1.76em on top of the 0.15em it
    already had. */
 .wm-reg.rc-mark { top: -1.91em; }
+
+/* ============================================================
+   HIS CREATURE MARK
+   Leads the hero lockup — mark, then the (R), then the name. An alpha
+   mask filled with currentColor, exactly like rc-mark, so the four ink
+   plates tint it and it comes into register with the wordmark instead of
+   sitting outside the effect as a flat image.
+   ============================================================ */
+
+.creature {
+  position: relative;
+  z-index: 2;
+  width: clamp(120px, 19vw, 300px);
+  aspect-ratio: 1200 / 1105;
+  isolation: isolate;
+  margin-bottom: clamp(4px, 1vh, 14px);
+}
+
+.cr-plate {
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  -webkit-mask: url('/rc-creature.webp') left center / contain no-repeat;
+  mask: url('/rc-creature.webp') left center / contain no-repeat;
+  mix-blend-mode: multiply;
+  will-change: transform;
+}
+
+/* Same plate errors as the wordmark, scaled to this element. */
+.cr-c { color: var(--cyan);    opacity: calc(0.72 - 0.72 * var(--p)); transform: translate3d(calc((1 - var(--p)) * -14px), calc((1 - var(--p)) *  6px), 0); }
+.cr-m { color: var(--magenta); opacity: calc(0.72 - 0.72 * var(--p)); transform: translate3d(calc((1 - var(--p)) *  11px), calc((1 - var(--p)) * -8px), 0); }
+.cr-y { color: var(--yellow);  opacity: calc(0.72 - 0.72 * var(--p)); transform: translate3d(calc((1 - var(--p)) *   3px), calc((1 - var(--p)) * 10px), 0); }
+.cr-k { color: var(--ink);     opacity: calc(0.42 + 0.58 * var(--p)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .cr-plate { transform: none !important; }
+  .cr-c, .cr-m, .cr-y { opacity: 0 !important; }
+  .cr-k { opacity: 1 !important; }
+}
+
+/* ============================================================
+   HERO FIT with the creature in the lockup
+   Adding the mark put creature (252) + wordmark (424) + band (280) = 956
+   into a 900px viewport, so the wordmark ran into the band. The wordmark
+   was sized purely by WIDTH; it needs a height budget too, exactly like
+   the statement. Two lines at 0.78 leading cost 1.62 x font-size.
+   ============================================================ */
+
+.creature {
+  width: clamp(100px, 13vw, 210px);
+}
+
+.t-wordmark {
+  font-size: min(
+    23vw,
+    calc((100vw - (2 * var(--margin))) / 3.8),
+    calc((100svh - 560px) / 1.62),
+    17rem
+  );
+}
+
+/* The fixed 560px overhead was wrong: the things above and below the
+   wordmark (top padding, the mark, the band) all scale with viewport
+   height, so a pixel constant left 0-2px of clearance at 900/1050 and
+   starved the wordmark at 720. Overhead is ~65svh, so the wordmark gets
+   the remaining ~35svh, and two lines at 0.78 leading cost 1.62x. */
+.creature {
+  width: min(13vw, 22svh, 210px);
+}
+
+.t-wordmark {
+  font-size: min(
+    23vw,
+    calc((100vw - (2 * var(--margin))) / 3.8),
+    20svh,
+    17rem
+  );
+}
+
+/* 20svh still left only 6-11px under the wordmark at 1280x720 and
+   1440x820 — visually touching. 18.5svh clears every tested height.
+   The mark also needs a floor: at 390px wide, 13vw is 51px, which is too
+   small for it to read as a mark at all. */
+.creature {
+  width: max(84px, min(13vw, 22svh, 210px));
+}
+
+.t-wordmark {
+  font-size: min(
+    23vw,
+    calc((100vw - (2 * var(--margin))) / 3.8),
+    18.5svh,
+    17rem
+  );
+}
