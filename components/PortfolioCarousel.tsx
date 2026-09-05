@@ -230,7 +230,7 @@ export default function PortfolioCarousel({ items }: { items: WorkItem[] }) {
     actIO = new IntersectionObserver(
       ([e]) => {
         if (e.isIntersecting) {
-          rootEl.style.setProperty('--act', '#091017');
+          rootEl.style.setProperty('--act', '#0a0a0a');
           rootEl.style.setProperty('--act-ink', '#f0f0ef');
         } else {
           rootEl.style.removeProperty('--act');
