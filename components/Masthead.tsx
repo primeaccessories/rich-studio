@@ -46,6 +46,14 @@ export default function Masthead() {
       start: 'top top',
       end: '+=110%',
       pin: true,
+      // pinType MUST be explicit. #smooth-content carries
+      // will-change: transform, which makes it a containing block, so a
+      // position:fixed pin does not work inside it. GSAP infers this from
+      // the smoother — but React runs CHILD effects before the PARENT's,
+      // so these triggers are built before ScrollSmoother exists and the
+      // inference silently picks 'fixed'. It worked locally and failed in
+      // production, which is exactly the shape of a race.
+      pinType: 'transform',
       scrub: 0.6,
       invalidateOnRefresh: true,
       onUpdate: (self) => {

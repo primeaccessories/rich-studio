@@ -44,6 +44,11 @@ export default function SmoothScroll({
       ignoreMobileResize: true,
     });
 
+    // Child effects run before this one, so every pinned trigger on the
+    // page was created before the smoother existed. A hard refresh makes
+    // them re-measure against the real scroller.
+    ScrollTrigger.refresh(true);
+
     return () => {
       smootherRef.current?.kill();
       smootherRef.current = null;

@@ -49,6 +49,9 @@ export default function StatementHold() {
             start: 'top top',
             end: '+=140%',
             pin: true,
+            // See Masthead: #smooth-content is a containing block, so a
+            // fixed pin cannot work inside it.
+            pinType: 'transform',
             scrub: 0.8,
             // Without this the pin measures before webfonts land and the
             // hold ends up the wrong height.
