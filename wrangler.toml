@@ -1,10 +1,13 @@
+# Cloudflare PAGES configuration.
+#
+# This file was previously a Workers config (type/routes/workers_dev), which
+# Pages reads, finds invalid, and discards — so the publish directory fell
+# back to the dashboard setting of ".next". That is the Next build directory,
+# not the static export, so the deploy was shipping build cache instead of the
+# site, and eventually tripped Pages' 25 MiB per-file limit on a turbopack
+# cache blob.
+#
+# next.config.ts sets output: 'export', so the site lands in ./out.
 name = "rich-colvill"
-type = "javascript"
-account_id = "dbc0a553ce199207b52ca7f2a1177b4a"
-workers_dev = true
-compatibility_date = "2024-09-01"
-
-[env.production]
-routes = [
-  { pattern = "rich-colvill.pages.dev", zone_name = "pages.dev" }
-]
+compatibility_date = "2026-09-01"
+pages_build_output_dir = "out"
