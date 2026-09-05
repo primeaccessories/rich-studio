@@ -9,7 +9,7 @@ export default function SiteFooter() {
       <div className="footer-rule" aria-hidden="true" />
       <div className="footer-meta">
         <span className="t-mono">
-          &#174;RICH COLVILL &#169;COPYRIGHT {year}, ALL RIGHTS RESERVED
+          <span className="rc-mark" aria-hidden="true" />RICH COLVILL &#169;COPYRIGHT {year}, ALL RIGHTS RESERVED
         </span>
         <span className="t-mono">
           <a href="https://www.instagram.com/" rel="noopener noreferrer" target="_blank">

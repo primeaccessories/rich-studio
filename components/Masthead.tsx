@@ -114,7 +114,7 @@ export default function Masthead() {
           {(['c', 'm', 'y', 'k'] as const).map((plate) => (
             <span className={`wm-plate wm-${plate}`} key={plate}>
               <span className="wm-line">
-                <span className="wm-reg">&#174;</span>RICH
+                <span className="wm-reg rc-mark" />RICH
               </span>
               <span className="wm-line">COLVILL</span>
             </span>

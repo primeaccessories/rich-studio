@@ -1703,3 +1703,86 @@ a {
 @media (prefers-reduced-motion: reduce) {
   .masthead-foot { transform: none !important; }
 }
+
+/* ============================================================
+   HIS MARK
+   The circled R is Rich's actual logo. It was previously being set as a
+   typographic (R) from Archivo, which is a different shape entirely — the
+   sort of thing he would spot immediately.
+
+   Drawn as an alpha mask filled with currentColor rather than an <img>,
+   so it inherits whatever colour it sits in AND can be tinted per ink
+   plate by the registration effect.
+   ============================================================ */
+
+.rc-mark {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  background: currentColor;
+  -webkit-mask: url('/rc-mark.svg') center / contain no-repeat;
+  mask: url('/rc-mark.svg') center / contain no-repeat;
+  vertical-align: -0.12em;
+  flex: none;
+}
+
+/* In the mono slug lines it sits tight against the wordmark. */
+.t-mono .rc-mark {
+  width: 0.95em;
+  height: 0.95em;
+  margin-right: 0.22em;
+  vertical-align: -0.1em;
+}
+
+/* Hero: superscript, on the cap line, at the same optical size the
+   typographic mark held. */
+.wm-reg.rc-mark {
+  width: 0.26em;
+  height: 0.26em;
+  vertical-align: baseline;
+  margin-right: 0.05em;
+  position: relative;
+  top: -0.52em;
+}
+
+/* .wm-reg already carries font-size: 0.26em, so sizing the mark at 0.26em
+   applied the ratio twice and rendered it at 18px instead of ~71px. The
+   em here resolves against the already-reduced font-size, so 1em is right. */
+.wm-reg.rc-mark {
+  width: 1em;
+  height: 1em;
+  top: -0.15em;
+}
+
+/* ============================================================
+   STATEMENT — wider measure
+   Client: "this section is too narrow it needs to cover more of the page
+   we may need to make this section smaller."
+
+   22ch was a narrow column in the middle of a wide page. The statement now
+   spans 10 of 12 columns, centred — a grid span, not a ch guess. With
+   content width W and gutter g:
+     span10 = 10col + 9g = (5W - g) / 6
+   The wider measure roughly halves the line count, so the height budget
+   divides by 8 lines rather than 15.
+   ============================================================ */
+
+.hold-copy {
+  max-width: none;
+  width: calc((5 * 100% - var(--gutter)) / 6);
+  margin-inline: auto;
+  font-size: clamp(1.15rem, min(3.4vw, calc((100svh - 300px) / 8)), 3.1rem);
+}
+
+/* The client list widens with it, and sits inside the statement's measure
+   so the two share the same right edge rather than each finding its own. */
+.hold-body {
+  max-width: none;
+  width: calc((5 * 100% - var(--gutter)) / 6);
+}
+
+/* The mark is a superscript and belongs on the CAP line, not hanging at
+   the baseline of RICH. Measured: it sat 125px below the line-box top at a
+   71px font-size, so it needed raising by 1.76em on top of the 0.15em it
+   already had. */
+.wm-reg.rc-mark { top: -1.91em; }

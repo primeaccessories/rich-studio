@@ -40,7 +40,7 @@ export default function SiteNav() {
         aria-hidden={!showMark}
         tabIndex={showMark ? 0 : -1}
       >
-        &#174;RICH COLVILL
+        <span className="rc-mark" aria-hidden="true" />RICH COLVILL
       </Link>
 
       <ul className="site-nav-links">

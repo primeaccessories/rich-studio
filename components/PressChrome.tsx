@@ -77,7 +77,7 @@ export default function PressChrome() {
 
       {/* The slug line. Screen-reader-hidden: it is furniture, not content. */}
       <div className="hud hud-l t-mono" aria-hidden="true">
-        <span className="t-mono-b">&#174;RICH COLVILL</span>
+        <span className="t-mono-b"><span className="rc-mark" />RICH COLVILL</span>
         <br />
         BRANDING / DESIGN
       </div>
