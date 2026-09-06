@@ -112,10 +112,10 @@ export default function StatementHold() {
               return `top ${Math.round(head + band)}px`;
             },
             end: '+=140%',
-            pin: true,
+            // pin: true,
             // See Masthead: #smooth-content is a containing block, so a
             // fixed pin cannot work inside it.
-            pinType: 'transform',
+            // pinType: 'transform',
             scrub: 0.55,
             // Without this the pin measures before webfonts land and the
             // hold ends up the wrong height.
