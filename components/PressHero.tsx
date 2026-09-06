@@ -83,7 +83,11 @@ export default function PressHero({
       const { ScrollTrigger } = stMod;
       gsap.registerPlugin(ScrollTrigger);
 
-      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const reducedMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
+      let reduced = reducedMQ.matches;
+      const onReduced = () => { reduced = reducedMQ.matches; };
+      reducedMQ.addEventListener('change', onReduced);
+      cleanups.push(() => reducedMQ.removeEventListener('change', onReduced));
       const cssVar = (n: string) =>
         getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
@@ -460,6 +464,12 @@ export default function PressHero({
       function frame() {
         raf = requestAnimationFrame(frame);
         const dt = Math.min(clock.getDelta(), 0.05);
+        // window.scrollY is the RAW native scroll position: ScrollSmoother
+        // really does scroll the page and lerps the content transform, so
+        // the smoothed visual position LAGS this. That is the behaviour we
+        // want — the boost should answer the visitor's input, not the
+        // eased result of it.
+        //
         // Scroll sample is taken BEFORE the visibility gate, and the
         // per-frame delta is clamped. Sampling inside the gate let
         // lastScrollY go stale while the hero was off screen, so coming
@@ -506,7 +516,15 @@ export default function PressHero({
 
         // Drift pauses while the visitor is holding a sheet, or has one
         // opened — both are moments where they want it to stay put.
-        if (!reduced && !dragging && focusTarget === 0 && !pausedRef.current) {
+        // Hold the rail while keyboard focus is on the featured link: the
+        // drift re-points that link's href, so letting it move under a
+        // focused target means the visitor activates something other than
+        // what they read.
+        const ae = document.activeElement;
+        const holdingFocus =
+          !!ae && ae !== document.body && !!ae.closest?.('.masthead-feature');
+
+        if (!reduced && !dragging && focusTarget === 0 && !pausedRef.current && !holdingFocus) {
           target += (AUTO_DRIFT + boost) * dt;
         }
 

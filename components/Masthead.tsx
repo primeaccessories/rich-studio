@@ -45,7 +45,7 @@ export default function Masthead() {
           STUDIO
         </p>
 
-        <div className="masthead-feature">
+        <div className="masthead-feature" aria-live="polite" aria-atomic="true">
           <span className="t-mono">FEATURED</span>
           <Link href={`/work/${current.slug}`} className="feature-link">
             <span className="t-caps feature-line" key={current.slug}>
