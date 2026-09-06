@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import ContactBlock from '@/components/ContactBlock';
 import SiteFooter from '@/components/SiteFooter';
 
 export const metadata: Metadata = {
@@ -84,7 +83,6 @@ export default function About() {
         </div>
       </section>
 
-      <ContactBlock />
       <SiteFooter />
     </>
   );

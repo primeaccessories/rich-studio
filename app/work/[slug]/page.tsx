@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import RegistrationHero from '@/components/RegistrationHero';
 import RegisteredImage from '@/components/RegisteredImage';
-import ContactBlock from '@/components/ContactBlock';
 import SiteFooter from '@/components/SiteFooter';
 import ActGround from '@/components/ActGround';
 import { ALL_WORK, getWork, neighbours } from '@/lib/work';
@@ -113,7 +112,6 @@ export default async function CaseStudy({
         )}
       </nav>
 
-      <ContactBlock />
       <SiteFooter />
     </>
   );

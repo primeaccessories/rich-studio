@@ -754,58 +754,6 @@ a {
 
 .hold-body { opacity: 0.62; max-width: 62ch; }
 
-/* ---------- CONTACT ---------- */
-
-.contact {
-  position: relative;
-  z-index: 1;
-  padding-block: clamp(64px, 13vh, 170px);
-  border-top: var(--rule) solid var(--ink-22);
-}
-
-.contact-label { display: flex; align-items: center; gap: 10px; opacity: 0.5; }
-
-.contact-shout { margin: clamp(14px, 2.5vh, 28px) 0 clamp(16px, 3vh, 34px); }
-
-.contact-body { opacity: 0.7; margin-bottom: clamp(26px, 5vh, 60px); }
-
-.contact-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: clamp(18px, 3vw, 40px);
-  border-top: var(--rule) solid var(--ink-22);
-  padding-top: clamp(16px, 3vh, 30px);
-}
-
-.contact-cell { display: flex; flex-direction: column; gap: 6px; }
-
-.contact-cell > .t-mono:first-child { opacity: 0.45; }
-
-.contact-primary { grid-column: span 2; }
-
-@media (max-width: 700px) { .contact-primary { grid-column: span 1; } }
-
-.contact-email {
-  font-weight: 700;
-  font-stretch: 88%;
-  font-size: clamp(1rem, 2.1vw, 1.7rem);
-  line-height: 1.08;
-  letter-spacing: -0.012em;
-  border-bottom: 2px solid transparent;
-  transition: border-color 220ms var(--ease-out);
-  word-break: break-word;
-}
-
-.contact-email-sm { font-size: clamp(0.86rem, 1.2vw, 1rem); }
-
-.contact-email:hover, .contact-email:focus-visible { border-bottom-color: currentColor; }
-
-.contact-more { display: inline-block; margin-top: clamp(26px, 5vh, 56px); opacity: 0.6; }
-
-.contact-more:hover { opacity: 1; }
-
-/* ---------- FOOTER ---------- */
-
 .site-footer { position: relative; z-index: 1; padding-block: clamp(30px, 6vh, 70px); }
 
 .footer-shout { margin: 0 0 clamp(16px, 3vh, 30px); opacity: 0.16; }
@@ -1209,15 +1157,13 @@ a {
 .about-label,
 .page-label,
 .hold-label,
-.contact-label,
-.cs-label,
-.contact-cell > .t-mono:first-child { opacity: 0.72; }
+.cs-label { opacity: 0.72; }
 
 .hud { opacity: 0.8; }
 .site-nav-link { opacity: 0.72; }
 .feature-client { opacity: 0.78; }
 .footer-meta { opacity: 0.78; }
-.page-body, .contact-body, .hold-body { opacity: 0.82; }
+.page-body, .hold-body { opacity: 0.82; }
 
 /* Large display type needs 3:1, not 4.5:1 — but 0.16 and 0.22 were far
    under even that. These stay quiet, just not invisible. */
@@ -2439,4 +2385,72 @@ button:disabled,
 
 @media (prefers-reduced-motion: reduce) {
   .cats-img { transition: opacity 1ms; transform: none !important; }
+}
+
+/* ---------- CONTACT, IN THE FOOT ----------
+   It used to be a full section of its own repeated above the footer on
+   four pages: a display shout, a paragraph and a five cell grid. Set
+   small and folded in here it is the last thing on the page rather than
+   a section competing with the work above it. */
+
+.footer-contact {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  /* Row gap deliberately tighter than the column gap: the only thing on
+     the second row is one link, and a 56px column gutter above it opens a
+     band of empty paper in the middle of the foot. */
+  gap: clamp(14px, 1.6vw, 24px) clamp(20px, 3vw, 56px);
+  align-items: start;
+  margin-bottom: clamp(24px, 4vh, 44px);
+}
+
+.footer-col { display: flex; flex-direction: column; gap: 8px; }
+
+.footer-h {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0.5;
+  margin: 0;
+}
+
+.footer-email {
+  font-family: var(--font-mono);
+  font-size: clamp(0.95rem, 1.7vw, 1.35rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  border-bottom: var(--rule) solid transparent;
+  align-self: flex-start;
+}
+
+.footer-email:hover,
+.footer-email:focus-visible { border-bottom-color: currentColor; }
+
+.footer-note { opacity: 0.5; }
+
+.footer-desks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px 24px;
+}
+
+.footer-desks li { display: flex; flex-direction: column; gap: 4px; }
+.footer-role { opacity: 0.45; }
+.footer-desk { border-bottom: var(--rule) solid transparent; align-self: flex-start; }
+.footer-desk:hover, .footer-desk:focus-visible { border-bottom-color: currentColor; }
+
+.footer-more {
+  grid-column: 1 / -1;
+  opacity: 0.6;
+  justify-self: start;
+  /* 44px of target, without 44px of box round a one line link. */
+  padding-block: 12px;
+}
+
+.footer-more:hover { opacity: 1; }
+
+@media (max-width: 720px) {
+  .footer-contact { grid-template-columns: 1fr; }
 }

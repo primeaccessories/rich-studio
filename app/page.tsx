@@ -1,7 +1,6 @@
 import Masthead from '@/components/Masthead';
 import StatementHold from '@/components/StatementHold';
 import WorkGrid from '@/components/WorkGrid';
-import ContactBlock from '@/components/ContactBlock';
 import SiteFooter from '@/components/SiteFooter';
 import { ALL_WORK, DISCIPLINES, INDUSTRIES } from '@/lib/work';
 
@@ -24,7 +23,6 @@ export default function Home() {
         heading="WORK"
       />
 
-      <ContactBlock />
       <SiteFooter />
     </>
   );

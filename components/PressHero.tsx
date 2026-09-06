@@ -238,6 +238,7 @@ export default function PressHero({
         hinge: import('three').Object3D;
         pageMat: import('three').MeshBasicMaterial;   // recto — the block's face
         pageMatL: import('three').MeshBasicMaterial;  // verso — the cover's inside
+        verso: import('three').Mesh;                  // the left leaf itself
         pageBuilt: boolean;
         heroImg: HTMLImageElement | null;
         openT: number;
@@ -325,7 +326,8 @@ export default function PressHero({
         scene.add(sh);
 
         slabs.push({
-          group, hinge, pageMat, pageMatL, openT: 0, pageBuilt: false, heroImg: null,
+          group, hinge, pageMat, pageMatL, verso: coverBack,
+          openT: 0, pageBuilt: false, heroImg: null,
           mesh, shadow: sh, canvas: c, sep, mats, project: p,
           // Fully printed from the first frame. Running the press pass on
           // load meant landing on a halftone dot field that resolved while
@@ -696,17 +698,31 @@ export default function PressHero({
       const projPt = new THREE.Vector3();
       function pageScreenRect(i: number) {
         const hw = SLAB_W / 2, hh = SLAB_H / 2, zf = SLAB_D / 2;
-        const corners: Array<[number, number, number]> = [
-          [-hw, hh, zf], [hw, hh, zf], [hw, -hh, zf], [-hw, -hh, zf],
-        ];
         const xs: number[] = [], ys: number[] = [];
-        for (const [cx, cy, cz] of corners) {
-          projPt.set(cx, cy, cz);
-          slabs[i].mesh.localToWorld(projPt);
-          projPt.project(camera);
-          xs.push((projPt.x * 0.5 + 0.5) * W);
-          ys.push((-projPt.y * 0.5 + 0.5) * H);
-        }
+
+        const take = (
+          obj: import('three').Object3D,
+          corners: Array<[number, number, number]>,
+        ) => {
+          for (const [cx, cy, cz] of corners) {
+            projPt.set(cx, cy, cz);
+            obj.localToWorld(projPt);
+            projPt.project(camera);
+            xs.push((projPt.x * 0.5 + 0.5) * W);
+            ys.push((-projPt.y * 0.5 + 0.5) * H);
+          }
+        };
+
+        // BOTH leaves, not just the block's face. Measuring the recto
+        // alone put the cinematic over the right hand page, so the zoom
+        // grew out of one side of an open book instead of out of the
+        // middle of the spread you were actually looking at.
+        take(slabs[i].mesh, [
+          [-hw, hh, zf], [hw, hh, zf], [hw, -hh, zf], [-hw, -hh, zf],
+        ]);
+        take(slabs[i].verso, [
+          [-hw, hh, 0], [hw, hh, 0], [hw, -hh, 0], [-hw, -hh, 0],
+        ]);
         const sr = stage!.getBoundingClientRect();
         const left = Math.min(...xs), top = Math.min(...ys);
         return {
