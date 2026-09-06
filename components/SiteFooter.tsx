@@ -5,7 +5,7 @@ export default function SiteFooter() {
 
   return (
     <footer className="site-footer sheet">
-      <p className="t-display footer-shout">THAT&#39;S ALL F**KS</p>
+      <p className="t-display footer-shout" data-split>THAT&#39;S ALL F**KS</p>
       <div className="footer-rule" aria-hidden="true" />
       <div className="footer-meta">
         <span className="t-mono">

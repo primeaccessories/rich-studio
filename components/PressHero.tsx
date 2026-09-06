@@ -266,7 +266,11 @@ export default function PressHero({
         slabs.push({
           group, hinge, pageMat, openT: 0, pageBuilt: false, heroImg: null,
           mesh, shadow: sh, canvas: c, sep, mats, project: p,
-          printT: i === PRESS_START ? -0.45 : 1,
+          // Fully printed from the first frame. Running the press pass on
+          // load meant landing on a halftone dot field that resolved while
+          // the artwork was still downloading — it read as the page being
+          // broken, not as a press.
+          printT: 1,
         });
       });
 
@@ -297,6 +301,22 @@ export default function PressHero({
       };
       idle(buildNextPage);
 
+      /* ---------- hold the canvas until the sheets are real ----------
+         The generated typographic sheets are a fallback, not something to
+         look at: without this you watch six placeholder sheets swap to the
+         artwork one by one, which is most of what read as "glitchy". */
+      const artTotal = PRESS_PROJECTS.filter((x) => x.art).length;
+      let artLoaded = 0;
+      let revealed = false;
+      function reveal() {
+        if (revealed || disposed) return;
+        revealed = true;
+        canvas!.classList.add('is-ready');
+      }
+      // Never hold the hero hostage to a slow or failed image.
+      const revealTimer = window.setTimeout(reveal, 2600);
+      cleanups.push(() => window.clearTimeout(revealTimer));
+
       /* ---------- the destination hero, for the page inside ---------- */
       PRESS_PROJECTS.forEach((p, i) => {
         if (!p.hero) return;
@@ -326,17 +346,22 @@ export default function PressHero({
         // with getImageData and a tainted canvas throws a SecurityError.
         img.crossOrigin = 'anonymous';
         img.decoding = 'async';
+        img.onerror = () => { artLoaded++; if (artLoaded >= artTotal) reveal(); };
         img.onload = () => {
           if (disposed) return;
           try {
             sheets.paintArt(slabs[i].canvas, img, PW, PH);
             sheets.stampCoverTitle(slabs[i].canvas, p, T, PW, PH);
             press.refreshSeparation(slabs[i].sep, slabs[i].canvas, PW, PH);
-            slabs[i].printT = 0;
+            slabs[i].printT = 1;      // swap in silently; do not re-print
+            artLoaded++;
+            if (artLoaded >= artTotal) reveal();
             // The page inside is drawn from the DESTINATION hero, loaded
             // separately above — not from this cover art.
           } catch {
             /* tainted canvas — keep the generated sheet */
+            artLoaded++;
+            if (artLoaded >= artTotal) reveal();
           }
         };
         img.src = p.art;

@@ -32,12 +32,12 @@ export default function About() {
         <span className="t-mono page-label">
           <span className="target" aria-hidden="true" /> ABOUT
         </span>
-        <h1 className="t-display page-shout-sm">
+        <h1 className="t-display page-shout-sm" data-split>
           A TEAM OF CREATIVE CREATURES.
         </h1>
       </header>
 
-      <section className="about sheet">
+      <section className="about sheet" data-reveal="stagger">
         <div className="about-col">
           <span className="t-mono about-label">PRACTICE</span>
           <p className="t-statement about-lead">
@@ -68,13 +68,20 @@ export default function About() {
         </div>
       </section>
 
-      <section className="clients sheet">
-        <span className="t-mono about-label">SELECTED CLIENTS</span>
-        <ul className="clients-list">
-          {CLIENTS.map((c) => (
-            <li key={c} className="clients-item t-display">{c}</li>
-          ))}
-        </ul>
+      <section className="clients">
+        <span className="t-mono about-label sheet">SELECTED CLIENTS</span>
+        {/* A running band rather than a static list: 25 years of names is
+            a lot of page, and a marquee reads them out instead. */}
+        <div className="marquee" aria-label="Selected clients">
+          <div className="marquee-track">
+            {CLIENTS.map((c) => (
+              <span key={c} className="marquee-item t-display">
+                {c}
+                <span className="marquee-dot" aria-hidden="true" />
+              </span>
+            ))}
+          </div>
+        </div>
       </section>
 
       <ContactBlock />

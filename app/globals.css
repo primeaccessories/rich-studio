@@ -2109,3 +2109,104 @@ a {
 @media (prefers-reduced-motion: reduce) {
   .cine-cap { animation: none; opacity: 1; }
 }
+
+/* ============================================================
+   MOTION LAYER
+   Primitives applied by data attribute across every page, so the whole
+   site moves in one language rather than collecting unrelated effects.
+   ============================================================ */
+
+/* Split lines need a clipping parent, or the incoming line is visible
+   above its own mask before it arrives. */
+.m-line { overflow: hidden; display: block; }
+[data-split] { overflow: hidden; }
+
+/* Reveals start hidden ONLY when the motion layer is live. Without this
+   guard, a JS failure would leave the whole page invisible — the content
+   must never depend on the enhancement. */
+.motion-ready [data-reveal] { will-change: transform, opacity; }
+
+.magnetic { will-change: transform; }
+
+/* ---------- roll-over labels ---------- */
+.roll {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+
+.roll > span {
+  display: block;
+  transition: transform 420ms var(--ease-out);
+}
+
+.roll > span::after {
+  content: attr(data-label);
+  position: absolute;
+  left: 0;
+  top: 100%;
+  white-space: nowrap;
+}
+
+.roll:hover > span,
+a:focus-visible .roll > span,
+.roll:focus-visible > span { transform: translateY(-100%); }
+
+/* ---------- marquee ---------- */
+.marquee {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  padding-block: clamp(18px, 3vh, 40px);
+  border-block: var(--rule) solid var(--ink-22);
+  margin-top: clamp(16px, 3vh, 34px);
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+
+.marquee-item {
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(20px, 3vw, 52px);
+  padding-right: clamp(20px, 3vw, 52px);
+  font-size: clamp(1.3rem, 4vw, 3.4rem);
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0.75;
+}
+
+.marquee-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.4;
+  flex: none;
+}
+
+.clients { padding-block: clamp(40px, 8vh, 110px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track { transform: none !important; flex-wrap: wrap; width: auto; }
+  .roll > span { transition: none; }
+  .marquee { overflow: visible; }
+}
+
+/* The rail fades in once its sheets are real. Landing mid-press-pass —
+   watching a halftone field resolve while the artwork was still arriving —
+   read as the page being broken rather than as a printing press. */
+.press-gl {
+  opacity: 0;
+  transition: opacity 520ms var(--ease-out);
+}
+
+.press-gl.is-ready { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .press-gl { transition: none; }
+}

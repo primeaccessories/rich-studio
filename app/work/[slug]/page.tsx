@@ -69,12 +69,12 @@ export default async function CaseStudy({
         <span className="t-mono cs-label">
           <span className="target" aria-hidden="true" /> BRIEF
         </span>
-        <p className="t-statement cs-copy">{work.description}</p>
+        <p className="t-statement cs-copy" data-split>{work.description}</p>
       </section>
 
       {rest.length > 0 && (
         <section className="cs-plates sheet">
-          <ul className="cs-plate-grid grid12">
+          <ul className="cs-plate-grid grid12" data-reveal="stagger">
             {rest.map((img, i) => (
               <li
                 key={img.src}
@@ -98,7 +98,7 @@ export default async function CaseStudy({
         </section>
       )}
 
-      <nav className="cs-nav sheet" aria-label="Case studies">
+      <nav className="cs-nav sheet" aria-label="Case studies" data-reveal>
         {prev && (
           <Link href={`/work/${prev.slug}`} className="cs-nav-link">
             <span className="t-mono">&#8592; PREVIOUS</span>

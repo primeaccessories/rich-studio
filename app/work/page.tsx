@@ -17,8 +17,8 @@ export default function WorkIndex() {
         <span className="t-mono page-label">
           <span className="target" aria-hidden="true" /> ARCHIVE
         </span>
-        <h1 className="t-wordmark page-shout">WORK</h1>
-        <p className="t-body page-body">
+        <h1 className="t-wordmark page-shout" data-split>WORK</h1>
+        <p className="t-body page-body" data-reveal>
           {ALL_WORK.length} PROJECTS ACROSS BRANDING AND RETOUCH.
         </p>
       </header>

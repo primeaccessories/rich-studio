@@ -53,7 +53,9 @@ export default function SiteNav() {
                 className={`t-mono site-nav-link${active ? ' is-on' : ''}`}
                 aria-current={active ? 'page' : undefined}
               >
-                {l.label}
+                <span className="roll">
+                  <span data-label={l.label}>{l.label}</span>
+                </span>
               </Link>
             </li>
           );

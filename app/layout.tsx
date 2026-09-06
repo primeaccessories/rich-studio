@@ -3,6 +3,7 @@ import './globals.css';
 import PressChrome from '@/components/PressChrome';
 import SmoothScroll from '@/components/SmoothScroll';
 import SiteNav from '@/components/SiteNav';
+import MotionProvider from '@/components/MotionProvider';
 
 /* Copy here is Rich's own, verbatim from richcolvill.com — not invented.
    The previous build shipped a made-up strapline and a hello@ address
@@ -67,6 +68,7 @@ export default function RootLayout({
             ScrollSmoother's transform drags it up the page. */}
         <PressChrome />
         <SiteNav />
+        <MotionProvider />
 
         <SmoothScroll>
           <main id="main">{children}</main>

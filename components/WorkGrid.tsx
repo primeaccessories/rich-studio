@@ -49,9 +49,9 @@ export default function WorkGrid({
   return (
     <section className="work sheet" id="work">
       <div className="work-head">
-        <h2 className="t-display">{heading}</h2>
+        <h2 className="t-display" data-split>{heading}</h2>
 
-        <div className="facets">
+        <div className="facets" data-reveal="stagger">
           <fieldset className="facet">
             <legend className="t-mono">DISCIPLINES.</legend>
             {['ALL', ...disciplines].map((d) => (
@@ -93,7 +93,7 @@ export default function WorkGrid({
       {filtered.length === 0 ? (
         <p className="t-statement work-empty">NOTHING UNDER THAT COMBINATION.</p>
       ) : (
-        <ul className="work-grid grid12">
+        <ul className="work-grid grid12" data-reveal="stagger">
           {filtered.map((w, i) => (
             <li
               key={w.slug}

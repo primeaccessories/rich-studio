@@ -15,17 +15,17 @@ export default function ContactBlock() {
         <span className="target" aria-hidden="true" /> CONTACT
       </span>
 
-      <h2 className="t-display contact-shout">
+      <h2 className="t-display contact-shout" data-split>
         GET &#174;RICH QUICK.
       </h2>
 
-      <p className="t-body contact-body">
+      <p className="t-body contact-body" data-reveal>
         LET&#39;S GET TOGETHER, OVER E-MAIL, WHATSAPP, ZOOM, PHONE OR EVEN
         BETTER OVER A BEER, HAVE A CHAT AND SEE HOW WE CAN TAKE YOUR BRIEF TO
         THE NEXT LEVEL.
       </p>
 
-      <div className="contact-grid">
+      <div className="contact-grid" data-reveal="stagger">
         <div className="contact-cell">
           <span className="t-mono">BY APPOINTMENT ONLY</span>
           <span className="t-mono t-mono-b">11A &#8211; 4P MONDAY, THURSDAY</span>
@@ -51,7 +51,7 @@ export default function ContactBlock() {
         ))}
       </div>
 
-      <Link href="/work" className="t-mono contact-more">
+      <Link href="/work" className="t-mono contact-more magnetic">
         SEE ALL WORK &#8594;
       </Link>
     </section>

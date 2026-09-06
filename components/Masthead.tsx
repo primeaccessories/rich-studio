@@ -37,7 +37,7 @@ export default function Masthead() {
       />
 
       <section className="masthead-foot hero-band">
-        <p className="t-statement masthead-strap">
+        <p className="t-statement masthead-strap" data-split>
           BRANDING / DESIGN /
           <br />
           CREATIVE PRODUCTION
@@ -71,7 +71,7 @@ export default function Masthead() {
           </div>
         </div>
 
-        <div className="colophon t-mono">
+        <div className="colophon t-mono" data-reveal>
           <span>BY APPOINTMENT ONLY&nbsp;&nbsp;11A&#8211;4P MON / THU</span>
           <span>
             EST. 25 YEARS &nbsp;·&nbsp; SHEET{' '}
