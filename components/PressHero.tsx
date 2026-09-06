@@ -924,21 +924,23 @@ export default function PressHero({
          transformed by ScrollSmoother, and sticky inside a transformed
          ancestor tracks the transform rather than the viewport. */
       let scrollT = 0;
-      /* The HERO is pinned, not the stage: the rail and the band on the
-         fold beneath it, held and released as one thing.
+      /* NOT pinned.
 
-         WITH spacing this time. Without it nothing reserves the hold, so
-         the next section rides straight up over a hero that is still
-         pinned — measured: the statement's top reached 88px while the
-         hero was supposedly being held. The spacer is what lets the hero
-         have the screen to itself, and then hand it over. */
+         The rail and the band are one object — .hero-host holds them
+         together — and that object simply scrolls, which is what "stuck
+         to the hero" actually needs. Pinning it looked right in a trace
+         and was wrong to use: a pin with spacing reserves its hold, so
+         the first 1000px of scrolling moved NOTHING on the screen. A
+         frozen page does not read as a held hero, it reads as a broken
+         scroll.
+
+         The trigger stays, without the pin, because the veil still needs
+         the hero's progress to darken by. */
       const heroHost = stage.closest<HTMLElement>('.hero-host') ?? stage;
       const st = ScrollTrigger.create({
         trigger: heroHost,
         start: 'top top',
         end: '+=100%',
-        pin: heroHost,
-        pinType: 'transform',
         scrub: true,
         invalidateOnRefresh: true,
         onUpdate: (self) => {
