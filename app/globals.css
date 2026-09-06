@@ -2023,3 +2023,39 @@ a {
 
 /* The hint sat at --ink-45 on paper, which fails AA. */
 .hint { color: var(--ink-70); }
+
+/* Stop/run control for the rail — WCAG 2.2.2. Sits opposite the hint on
+   the same baseline, in the same mono as the rest of the furniture. */
+.press-pause {
+  position: absolute;
+  right: var(--margin);
+  bottom: 20px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 16px;
+  background: none;
+  border: var(--rule) solid var(--ink-22);
+  border-radius: 999px;
+  color: var(--ink-70);
+  cursor: pointer;
+  transition: border-color 200ms var(--ease-out), color 200ms var(--ease-out);
+}
+
+.press-pause:hover,
+.press-pause:focus-visible {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+@media (max-width: 640px) {
+  .hint { display: none; }
+  .press-pause { left: var(--margin); right: auto; }
+}
+
+/* With motion reduced the rail never drifts, so there is nothing to stop. */
+@media (prefers-reduced-motion: reduce) {
+  .press-pause { display: none; }
+}

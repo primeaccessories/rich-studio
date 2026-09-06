@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { PressProject, Theme } from '@/lib/pressSheets';
 
 /**
@@ -42,6 +42,9 @@ export default function PressHero({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const veilRef = useRef<HTMLDivElement>(null);
   const hintRef = useRef<HTMLParagraphElement>(null);
+  const [paused, setPaused] = useState(false);
+  // The loop reads a ref so toggling never re-runs the whole init effect.
+  const pausedRef = useRef(false);
   const onIndexRef = useRef(onIndex);
   const onOpenRef = useRef(onOpen);
   onIndexRef.current = onIndex;
@@ -307,6 +310,12 @@ export default function PressHero({
       /* ---------- interaction ---------- */
       let pos = PRESS_START, target = PRESS_START, vel = 0;
       let focus = 0, focusTarget = 0;
+
+      // The rail runs on its own — an idle carousel reads as broken. Drag
+      // and page-scroll add to that motion rather than replacing it.
+      const AUTO_DRIFT = 0.17;      // sheets per second at rest
+      let boost = 0;                // decaying bonus from scrolling
+      let lastScrollY = window.scrollY;
       const pointer = { x: 0, y: 0 };
       let dragging = false, dragStart = 0, posStart = 0, moved = 0, lastX = 0;
       const raycaster = new THREE.Raycaster();
@@ -330,6 +339,10 @@ export default function PressHero({
       }
 
       const onDown = (e: PointerEvent) => {
+        // The stage calls setPointerCapture below, which redirects every
+        // subsequent pointer event to the stage — so a button inside it
+        // never receives its click. Let controls have their event.
+        if ((e.target as HTMLElement | null)?.closest('button, a')) return;
         dragging = true; moved = 0;
         dragStart = lastX = e.clientX; posStart = target;
         stage!.classList.add('dragging');
@@ -359,7 +372,9 @@ export default function PressHero({
               if (focusTarget === 0 && onOpenRef.current) onOpenRef.current(PRESS_PROJECTS[i].slug);
             } else { target = Math.round(target) + rel; focusTarget = 0; }
           } else focusTarget = 0;
-        } else target = Math.round(target);
+        }
+        // Deliberately no snap-to-integer here. The rail is always
+        // drifting, so snapping would fight it and jerk on every release.
       };
       const onCancel = () => { dragging = false; stage!.classList.remove('dragging'); };
       const onWheel = (e: WheelEvent) => {
@@ -445,6 +460,18 @@ export default function PressHero({
       function frame() {
         raf = requestAnimationFrame(frame);
         const dt = Math.min(clock.getDelta(), 0.05);
+        // Scroll sample is taken BEFORE the visibility gate, and the
+        // per-frame delta is clamped. Sampling inside the gate let
+        // lastScrollY go stale while the hero was off screen, so coming
+        // back after a 9000px scroll dumped ~90 into the boost, pinned it
+        // at the clamp, and the rail flew — measured at 2 sheets in 1.4s
+        // against a resting 6s per sheet. The clamp also covers anchor
+        // jumps and restored scroll positions.
+        const sy = window.scrollY;
+        const scrolled = Math.min(Math.abs(sy - lastScrollY), 180);
+        lastScrollY = sy;
+        boost = Math.min(boost + scrolled * 0.010, 5.5) * Math.pow(0.93, dt * 60);
+
         if (visible && !retired) {
           samples.push(dt * 1000);
           if (samples.length === 90 && !degraded) {
@@ -475,6 +502,12 @@ export default function PressHero({
         if (!dragging && Math.abs(target) > N * 50) {
           const fold = Math.round(target / N) * N;
           target -= fold; pos -= fold;
+        }
+
+        // Drift pauses while the visitor is holding a sheet, or has one
+        // opened — both are moments where they want it to stay put.
+        if (!reduced && !dragging && focusTarget === 0 && !pausedRef.current) {
+          target += (AUTO_DRIFT + boost) * dt;
         }
 
         const prev = pos;
@@ -620,8 +653,24 @@ export default function PressHero({
       <section className="stage" ref={stageRef} aria-label="Selected work">
         <canvas className="press-gl" ref={canvasRef} />
         <p className="hint t-mono" ref={hintRef}>
-          <b>DRAG</b> TO MOVE THE STACK · CLICK A SHEET TO OPEN
+          <b>DRAG</b> OR SCROLL TO SPEED THE PRESS · CLICK A SHEET TO OPEN
         </p>
+
+        {/* WCAG 2.2.2 Pause, Stop, Hide (Level A): the rail starts on its
+            own, runs for well over five seconds and sits alongside other
+            content, so it needs a stop that is not just an OS setting. */}
+        <button
+          type="button"
+          className="press-pause t-mono"
+          aria-pressed={paused}
+          onClick={() => {
+            const next = !pausedRef.current;
+            pausedRef.current = next;
+            setPaused(next);
+          }}
+        >
+          {paused ? '\u25B6 RUN PRESS' : '\u25A0 STOP PRESS'}
+        </button>
         <div className="veil" ref={veilRef} />
       </section>
     </div>
