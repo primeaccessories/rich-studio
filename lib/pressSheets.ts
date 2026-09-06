@@ -30,6 +30,9 @@ export interface PressProject {
   words: string[];
   /** Same-origin image path, or null for a generated sheet. */
   art: string | null;
+  /** The case study's own hero — what the zoom lands on, so the cut is
+   *  seamless rather than a crossfade between two different pictures. */
+  hero?: string;
 }
 
 export function cv(w: number, h: number): HTMLCanvasElement {

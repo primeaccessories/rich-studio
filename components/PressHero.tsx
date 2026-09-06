@@ -20,12 +20,12 @@ import type { PressProject, Theme } from '@/lib/pressSheets';
  */
 
 export const PRESS_PROJECTS: PressProject[] = [
-  { slug: 'silverstone', title: 'REBRAND FOR SILVERSTONE RACECOURSE', client: 'SILVERSTONE',  tone: '#223549', kind: 4, words: ['HOME OF', 'RACING'],          art: '/press/silverstone.webp' },
-  { slug: 'hellmanns',   title: "HELLMANN'S AD CAMPAIGN",             client: "HELLMANN'S",   tone: '#c6a675', kind: 3, words: ['REAL', 'FOOD'],              art: '/press/hellmanns.webp' },
-  { slug: 'walls',       title: "WALL'S MAKES IT HAPPIER",            client: "WALL'S",       tone: '#e1251a', kind: 0, words: ['TASTE', 'HAPPIER', 'TODAY'], art: '/press/walls.webp' },
-  { slug: 'absolut',     title: 'ABSOLUT HALLOWEEN',                  client: 'ABSOLUT',      tone: '#d66511', kind: 1, words: ['ABSOLUT'],                   art: '/press/absolut.webp' },
-  { slug: 'networkrail', title: 'CREATIVE RETOUCH FOR NETWORK RAIL',  client: 'NETWORK RAIL', tone: '#533123', kind: 5, words: ['EVERY', 'JOURNEY'],          art: '/press/networkrail.webp' },
-  { slug: 'strongbow',   title: 'AD CAMPAIGN FOR STRONGBOW',          client: 'STRONGBOW',    tone: '#592e62', kind: 2, words: ['CRISP', 'GOLD'],             art: '/press/strongbow.webp' },
+  { slug: 'silverstone', title: 'REBRAND FOR SILVERSTONE RACECOURSE', client: 'SILVERSTONE',  tone: '#223549', kind: 4, words: ['HOME OF', 'RACING'],          art: '/press/silverstone.webp', hero: '/work/silverstone/00.webp' },
+  { slug: 'hellmanns',   title: "HELLMANN'S AD CAMPAIGN",             client: "HELLMANN'S",   tone: '#c6a675', kind: 3, words: ['REAL', 'FOOD'],              art: '/press/hellmanns.webp', hero: '/work/hellmanns/00.webp' },
+  { slug: 'walls',       title: "WALL'S MAKES IT HAPPIER",            client: "WALL'S",       tone: '#e1251a', kind: 0, words: ['TASTE', 'HAPPIER', 'TODAY'], art: '/press/walls.webp', hero: '/work/walls/00.webp' },
+  { slug: 'absolut',     title: 'ABSOLUT HALLOWEEN',                  client: 'ABSOLUT',      tone: '#d66511', kind: 1, words: ['ABSOLUT'],                   art: '/press/absolut.webp', hero: '/work/absolut/00.webp' },
+  { slug: 'networkrail', title: 'CREATIVE RETOUCH FOR NETWORK RAIL',  client: 'NETWORK RAIL', tone: '#533123', kind: 5, words: ['EVERY', 'JOURNEY'],          art: '/press/networkrail.webp', hero: '/work/networkrail/00.webp' },
+  { slug: 'strongbow',   title: 'AD CAMPAIGN FOR STRONGBOW',          client: 'STRONGBOW',    tone: '#592e62', kind: 2, words: ['CRISP', 'GOLD'],             art: '/press/strongbow.webp', hero: '/work/strongbow/00.webp' },
 ];
 
 const N = PRESS_PROJECTS.length;
@@ -297,6 +297,27 @@ export default function PressHero({
       };
       idle(buildNextPage);
 
+      /* ---------- the destination hero, for the page inside ---------- */
+      PRESS_PROJECTS.forEach((p, i) => {
+        if (!p.hero) return;
+        const hi = new Image();
+        hi.crossOrigin = 'anonymous';
+        hi.decoding = 'async';
+        hi.onload = () => {
+          if (disposed) return;
+          slabs[i].heroImg = hi;
+          try {
+            const old = slabs[i].pageMat.map;
+            slabs[i].pageMat.map = sheets.caseStudyPageTexture(p, T, PW, PH, hi);
+            slabs[i].pageMat.color = new THREE.Color(0xffffff);
+            slabs[i].pageMat.needsUpdate = true;
+            slabs[i].pageBuilt = true;
+            old?.dispose();
+          } catch { /* keep whatever page is already there */ }
+        };
+        hi.src = p.hero;
+      });
+
       /* ---------- real artwork ---------- */
       PRESS_PROJECTS.forEach((p, i) => {
         if (!p.art) return;
@@ -312,14 +333,8 @@ export default function PressHero({
             sheets.stampCoverTitle(slabs[i].canvas, p, T, PW, PH);
             press.refreshSeparation(slabs[i].sep, slabs[i].canvas, PW, PH);
             slabs[i].printT = 0;
-            // The opened page shows the real case-study hero.
-            slabs[i].heroImg = img;
-            const old = slabs[i].pageMat.map;
-            slabs[i].pageMat.map = sheets.caseStudyPageTexture(p, T, PW, PH, img);
-            slabs[i].pageMat.color = new THREE.Color(0xffffff);
-            slabs[i].pageMat.needsUpdate = true;
-            slabs[i].pageBuilt = true;
-            old?.dispose();
+            // The page inside is drawn from the DESTINATION hero, loaded
+            // separately above — not from this cover art.
           } catch {
             /* tainted canvas — keep the generated sheet */
           }
@@ -429,6 +444,32 @@ export default function PressHero({
       };
       const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
+      /**
+       * Nearest book to a press that missed. The rail is always drifting,
+       * so an exact hit-test means the occasional press lands in the gap
+       * between two books and is silently ignored — which reads as the
+       * site being broken rather than as the visitor having missed.
+       */
+      const nearPt = new THREE.Vector3();
+      function nearestIndex(clientX: number, clientY: number) {
+        const sr = stage!.getBoundingClientRect();
+        const px = clientX - sr.left, py = clientY - sr.top;
+        let best = -1, bestD = Infinity;
+        slabs.forEach((sl, i) => {
+          if (Math.abs(wrapRel(i - pos)) > 2.2) return;   // only what is on screen
+          nearPt.set(0, 0, SLAB_D / 2);
+          sl.mesh.localToWorld(nearPt);
+          nearPt.project(camera);
+          const x = (nearPt.x * 0.5 + 0.5) * W;
+          const y = (-nearPt.y * 0.5 + 0.5) * H;
+          const d = Math.hypot(x - px, y - py);
+          if (d < bestD) { bestD = d; best = i; }
+        });
+        // Only forgive a near miss — a press out in the margins still does
+        // nothing, as it should.
+        return bestD < Math.min(W, H) * 0.28 ? best : -1;
+      }
+
       function pickIndex(clientX: number, clientY: number) {
         const r = stage!.getBoundingClientRect();
         ndc.x = ((clientX - r.left) / r.width) * 2 - 1;
@@ -436,7 +477,8 @@ export default function PressHero({
         raycaster.setFromCamera(ndc, camera);
         // recursive: the book is a group of block + two cover faces
         const hits = raycaster.intersectObjects(slabs.map((s) => s.group), true);
-        return hits.length ? (hits[0].object.userData.index as number) : -1;
+        if (hits.length) return hits[0].object.userData.index as number;
+        return nearestIndex(clientX, clientY);
       }
 
       const onDown = (e: PointerEvent) => {
@@ -463,7 +505,14 @@ export default function PressHero({
         dragging = false;
         stage!.classList.remove('dragging');
         if (moved < 7) {
-          const i = pickIndex(e.clientX, e.clientY);
+          const hit = pickIndex(e.clientX, e.clientY);
+          // A press inside the stage ALWAYS opens something. The rail is
+          // drifting, so an exact hit-test occasionally lands between two
+          // books and the press is silently ignored — which reads as the
+          // site being broken. Falling back to whatever is centred is both
+          // predictable and what the visitor almost certainly meant.
+          const i =
+            typeof hit === 'number' && hit >= 0 ? hit : wrapIndex(pos);
           if (i >= 0 && !opening) {
             // One press does the lot: the sheet flies to centre, opens,
             // and hands over to its case study. Rebased on pos, which is
@@ -473,9 +522,17 @@ export default function PressHero({
             focusTarget = 1;
             slabs[i].printT = -0.1;          // print it again as it opens
             holdUntil = performance.now() + 8000;
-            opening = { i, slug: PRESS_PROJECTS[i].slug, at: performance.now() };
-          } else if (i < 0 && !opening) {
-            focusTarget = 0;
+            const slug = PRESS_PROJECTS[i].slug;
+            opening = { i, slug, at: performance.now() };
+            // Belt and braces, independent of the render loop: the loop is
+            // what normally triggers the cinematic, and if it is throttled,
+            // descheduled or retired the press would strand.
+            window.setTimeout(() => {
+              if (!disposed && opening && opening.slug === slug) {
+                opening = null;
+                runCinematic(i, slug);
+              }
+            }, 2900);
           }
         }
         // Deliberately no snap-to-integer here. The rail is always
@@ -515,6 +572,90 @@ export default function PressHero({
         focusTarget = 0;
         holdUntil = performance.now() + 2600;   // let the choice be read
       };
+
+      /**
+       * Screen-space rect of the opened page, so the cinematic zoom can
+       * start exactly where the page is sitting in 3D rather than from a
+       * guessed position.
+       */
+      const projPt = new THREE.Vector3();
+      function pageScreenRect(i: number) {
+        const hw = SLAB_W / 2, hh = SLAB_H / 2, zf = SLAB_D / 2;
+        const corners: Array<[number, number, number]> = [
+          [-hw, hh, zf], [hw, hh, zf], [hw, -hh, zf], [-hw, -hh, zf],
+        ];
+        const xs: number[] = [], ys: number[] = [];
+        for (const [cx, cy, cz] of corners) {
+          projPt.set(cx, cy, cz);
+          slabs[i].mesh.localToWorld(projPt);
+          projPt.project(camera);
+          xs.push((projPt.x * 0.5 + 0.5) * W);
+          ys.push((-projPt.y * 0.5 + 0.5) * H);
+        }
+        const sr = stage!.getBoundingClientRect();
+        const left = Math.min(...xs), top = Math.min(...ys);
+        return {
+          left: sr.left + left,
+          top: sr.top + top,
+          width: Math.max(...xs) - left,
+          height: Math.max(...ys) - top,
+        };
+      }
+
+      /**
+       * The cinematic: a real DOM copy of the case study's own hero appears
+       * exactly over the opened page, then zooms to fill the screen while
+       * the route changes underneath it. Because it IS the destination's
+       * hero image, the cut has nothing to give away.
+       */
+      let cineEl: HTMLDivElement | null = null;
+      function runCinematic(i: number, slug: string) {
+        const proj = PRESS_PROJECTS[i];
+        const r = pageScreenRect(i);
+        const el = document.createElement('div');
+        cineEl = el;
+        el.className = 'cine';
+        el.setAttribute('aria-hidden', 'true');
+        el.style.left = r.left + 'px';
+        el.style.top = r.top + 'px';
+        el.style.width = r.width + 'px';
+        el.style.height = r.height + 'px';
+        el.innerHTML =
+          '<img class="cine-img" alt="" src="' + (proj.hero || proj.art || '') + '">' +
+          '<div class="cine-cap">' +
+          '<span class="t-mono cine-client"></span>' +
+          '<span class="t-display cine-title"></span>' +
+          '</div>';
+        (el.querySelector('.cine-client') as HTMLElement).textContent = proj.client;
+        (el.querySelector('.cine-title') as HTMLElement).textContent = proj.title;
+        document.body.appendChild(el);
+
+        gsap.to(el, {
+          left: 0, top: 0,
+          width: window.innerWidth,
+          height: window.innerHeight,
+          duration: 0.86,
+          ease: 'expo.inOut',
+          onComplete: () => {
+            onOpenRef.current?.(slug);
+            // Hold through the route change, then dissolve onto the real
+            // page — which is the same image, full bleed.
+            window.setTimeout(() => {
+              gsap.to(el, {
+                opacity: 0, duration: 0.32, ease: 'power2.out',
+                onComplete: () => { el.remove(); if (cineEl === el) cineEl = null; },
+              });
+            }, 340);
+          },
+        });
+        // Never strand the overlay if the timeline is interrupted.
+        window.setTimeout(() => {
+          if (cineEl === el && document.body.contains(el)) {
+            el.remove(); cineEl = null;
+          }
+        }, 4200);
+      }
+      cleanups.push(() => { cineEl?.remove(); cineEl = null; });
 
       /* ---------- pin + veil ----------
          ScrollTrigger, not CSS position:sticky: #smooth-content is
@@ -676,9 +817,9 @@ export default function PressHero({
             slabs[opening.i].openT > 0.9;
           const overdue = performance.now() - opening.at > 3200;  // never strand a press
           if (arrived || overdue) {
-            const slug = opening.slug;
+            const { slug, i } = opening;
             opening = null;
-            onOpenRef.current?.(slug);
+            runCinematic(i, slug);
           }
         }
 
