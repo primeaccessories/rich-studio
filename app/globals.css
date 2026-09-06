@@ -1935,8 +1935,10 @@ a {
    begins and cannot bleed over it. The ink simply holds the screen while
    the band is hooked, which is what it looked like it was going to do. */
 /* z-index matters here: .stage is position:relative z-index:1, so without
-   its own layer the host's ink paints UNDER the pinned hero and the books
-   show straight through the space. */
+   its own layer the host would sit UNDER the pinned hero and the books
+   would show through it. The ink is now only the band's own height —
+   there is no spacer left to cover — but it still catches the few pixels
+   the pin's frozen height lets the colophon overhang by. */
 .band-host {
   position: relative;
   z-index: 4;
@@ -2037,6 +2039,11 @@ a {
   margin-top: clamp(22px, 4vh, 44px);
   opacity: 0.72;
 }
+
+/* The colophon's own margin is sized for a masthead. In the band it put
+   68px of empty ink between the featured block and "BY APPOINTMENT ONLY",
+   which was most of what read as a lot of black space. */
+.hero-band .colophon { margin-top: clamp(8px, 1.2vh, 14px); }
 
 /* THE BAND'S OWN MEASURE
    Three separate .masthead-foot rules stack padding onto this element —

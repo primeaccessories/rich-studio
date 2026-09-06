@@ -949,9 +949,27 @@ export default function PressHero({
           end: '+=42%',
           pin: true,
           pinType: 'transform',
+          /* No spacer. With one, pinning reserved 294px of the flow below
+             the band — which showed the pinned hero through it until that
+             was covered, and then read as a slab of black sitting under
+             the colophon at rest. Without it the band simply holds while
+             the section below rides up underneath, which is what a hooked
+             band should do, and the ink ends where the band ends. */
+          pinSpacing: false,
           invalidateOnRefresh: true,
         });
         cleanups.push(() => bandST.kill(true));
+
+        /* Pinning FREEZES the band's height into an inline style, and it
+           was measured before the webfonts landed — so the frozen box came
+           out shorter than the text that ended up in it, and the strap was
+           cut through the middle with the colophon below the cut.
+
+           A hard refresh once the fonts are in re-measures the pin itself;
+           a soft one only recalculates start and end. */
+        document.fonts?.ready.then(() => {
+          if (!disposed) ScrollTrigger.refresh(true);
+        });
       }
 
       /* ---------- loop ---------- */
