@@ -745,7 +745,7 @@ a {
   min-height: calc(100svh - var(--head-h) - var(--band-h, 0px));
   display: flex;
   align-items: center;
-  background: var(--paper-2);
+  background: var(--ink);
 }
 
 .hold-inner { width: 100%; max-width: 1500px; margin-inline: auto; }
