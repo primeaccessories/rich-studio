@@ -53,17 +53,6 @@ export function ColumnRules({ count = 12 }: { count?: number }) {
 
 export default function PressChrome() {
   const time = useLondonClock();
-  const [past, setPast] = useState(false);
-
-  // The bottom HUD is fixed, so once the page scrolls it starts sitting on
-  // top of real captions. It belongs to the masthead; retire it after it.
-  useEffect(() => {
-    const onScroll = () => setPast(window.scrollY > window.innerHeight * 0.5);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
   return (
     <>
       <ColumnRules />
@@ -86,24 +75,6 @@ export default function PressChrome() {
         C 15&#176; &nbsp; M 75&#176; &nbsp; Y 45&#176;
         <br />
         {time ?? ' '}
-      </div>
-
-      <div
-        className={`hud hud-b t-mono${past ? ' is-retired' : ''}`}
-        aria-hidden="true"
-      >
-        BY APPOINTMENT ONLY
-        <br />
-        11A&#8211;4P MON / THU
-      </div>
-
-      <div
-        className={`hud hud-br t-mono${past ? ' is-retired' : ''}`}
-        aria-hidden="true"
-      >
-        EST. 25 YEARS
-        <br />
-        SHEET 01
       </div>
 
       <div className="grain" aria-hidden="true" />

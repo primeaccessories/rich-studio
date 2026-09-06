@@ -1881,3 +1881,145 @@ a {
     17rem
   );
 }
+
+/* ============================================================
+   THE PRESS STAGE
+   Palette is bound to the site's own tokens rather than a second set, so
+   the rail prints on the same stock as everything else. The component
+   re-reads these on a colour-scheme change and rebuilds its textures, so
+   the machinery is there if the site ever gains a dark theme.
+   ============================================================ */
+
+:root {
+  --press-paper: #f0f0ef;
+  --press-ink: #0a0a0a;
+  --press-cy: #8fcbe8;
+  --press-mg: #f0a3c8;
+  --press-yl: #f7e8a4;
+  --press-gr: #2c3b2d;
+  --press-co: #e8836b;
+}
+
+.stage {
+  position: relative;
+  z-index: 1;
+  height: 74svh;
+  min-height: 380px;
+  overflow: hidden;
+  background: var(--press-paper);
+  cursor: grab;
+  touch-action: pan-y;      /* vertical scroll stays native; drag is horizontal */
+}
+
+.stage.dragging { cursor: grabbing; }
+.stage.focused  { cursor: zoom-out; }
+
+/* alpha:true with the paper colour behind it, so a WebGL failure degrades
+   to a flat paper hero rather than a black rectangle. */
+.press-gl {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.veil {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: var(--ink);
+  opacity: 0;
+}
+
+.hint {
+  position: absolute;
+  left: var(--margin);
+  bottom: 20px;
+  z-index: 3;
+  color: var(--ink-45);
+  pointer-events: none;
+}
+
+.hint b { font-weight: 700; color: var(--ink); }
+
+/* ---------- the ink band under the stage ---------- */
+
+.hero-band {
+  position: relative;
+  z-index: 5;                  /* rides up over the pinned stage */
+  margin-inline: 0;            /* it is its own section now, not inset */
+  padding-inline: var(--margin);
+  transform: none !important;  /* the old rise animation is gone */
+}
+
+/* The old band carried a 100svh ink panel beneath it for the rise. As a
+   standalone section that would paint over whatever follows. */
+.hero-band::after { content: none; }
+
+.hero-index {
+  grid-column: 1 / -1;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  list-style: none;
+}
+
+.hero-index:focus-within {
+  position: static;
+  width: auto;
+  height: auto;
+  clip: auto;
+  overflow: visible;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  margin-top: 22px;
+}
+
+.hero-index-link {
+  color: var(--paper);
+  opacity: 0.8;
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 32px;
+}
+
+.hero-index-link:hover { opacity: 1; }
+.hero-index-num { opacity: 0.6; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 820px) {
+  .stage { height: 64svh; min-height: 320px; }
+}
+
+/* Reduced motion: the press pass fast-forwards and the rail stops
+   floating (handled in the component); the hint is not needed. */
+@media (prefers-reduced-motion: reduce) {
+  .hint { display: none; }
+}
+
+/* Studio info lives in the band, not in fixed chrome. As a fixed block it
+   sat on the strap's descenders at rest, because the band now begins at
+   74svh instead of filling the viewport. */
+.colophon {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px 28px;
+  flex-wrap: wrap;
+  margin-top: clamp(22px, 4vh, 44px);
+  opacity: 0.72;
+}
+
+.hero-band { padding-bottom: clamp(24px, 3.5vh, 44px); }
+
+@media (max-width: 640px) {
+  .colophon { flex-direction: column; gap: 6px; }
+}
+
+/* The hint sat at --ink-45 on paper, which fails AA. */
+.hint { color: var(--ink-70); }

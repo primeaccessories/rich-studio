@@ -1,20 +1,17 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { createRegistration, type RegistrationHandle } from '@/lib/registration';
 
 /**
- * The case-study hero — the one place the real shader runs.
+ * THE CASE-STUDY HERO
  *
- * The section pins and the plates register across the scrub. The press
- * plate coming into register IS the scroll payoff; there is no other
- * reward for the hold, and there does not need to be.
+ * Opening a case study prints it. The hero image is separated into C/M/Y/K
+ * and run through the press: black down first, then cyan, magenta, yellow,
+ * each wiping across the sheet, each landing out of register and pulling
+ * itself in, halftone visible while the ink is wet.
  *
- * If WebGL2 is missing the canvas never appears and the plain <img>
- * underneath stays visible, so the page degrades to a sharp photograph
- * rather than an empty box.
+ * This is the same `lib/press` module the hero rail uses — imported, not
+ * copied, so the two can never drift apart.
  */
 export default function RegistrationHero({
   src,
@@ -39,75 +36,141 @@ export default function RegistrationHero({
     const img = imgRef.current;
     if (!el || !canvas || !img) return;
 
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let disposed = false;
+    const cleanups: Array<() => void> = [];
 
-    let handle: RegistrationHandle | null = null;
-    let st: ScrollTrigger | null = null;
-    let ro: ResizeObserver | null = null;
-    let cancelled = false;
+    (async () => {
+      let THREE: typeof import('three');
+      let press: typeof import('@/lib/press');
+      try {
+        [THREE, press] = await Promise.all([import('three'), import('@/lib/press')]);
+      } catch {
+        return; // the <img> underneath stays visible
+      }
+      if (disposed) return;
 
-    const start = () => {
-      if (cancelled) return;
-      handle = createRegistration(canvas, img);
-      if (!handle) return; // no WebGL2 — leave the <img> showing
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      const ready = () =>
+        img.complete && img.naturalWidth
+          ? Promise.resolve()
+          : new Promise<void>((res) => img.addEventListener('load', () => res(), { once: true }));
+      await ready();
+      if (disposed) return;
+
+      // The sheet is drawn at the hero's own aspect so the shader's uv maps
+      // straight onto a fullscreen quad with no letterboxing maths.
+      const narrow = window.innerWidth < 820;
+      const SW = narrow ? 620 : 1200;
+      const rect = el.getBoundingClientRect();
+      const SH = Math.max(
+        200,
+        Math.round(SW * (rect.height / Math.max(1, rect.width))),
+      );
+
+      const sheet = document.createElement('canvas');
+      sheet.width = SW;
+      sheet.height = SH;
+      const ctx = sheet.getContext('2d', { willReadFrequently: true });
+      if (!ctx) return;
+      const scale = Math.max(SW / img.naturalWidth, SH / img.naturalHeight);
+      const dw = img.naturalWidth * scale;
+      const dh = img.naturalHeight * scale;
+      ctx.drawImage(img, (SW - dw) / 2, (SH - dh) / 2, dw, dh);
+
+      let sep: import('three').DataTexture;
+      try {
+        sep = press.separationTexture(sheet, SW, SH);
+      } catch {
+        return; // tainted canvas — leave the plain photograph
+      }
+
+      const supported = (() => {
+        try {
+          const t = document.createElement('canvas');
+          return !!(t.getContext('webgl2') || t.getContext('webgl'));
+        } catch { return false; }
+      })();
+      if (!supported) { sep.dispose(); return; }
+
+      let renderer: import('three').WebGLRenderer;
+      try {
+        renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false });
+      } catch {
+        sep.dispose();
+        return;
+      }
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(rect.width, rect.height, false);
+
+      const scene = new THREE.Scene();
+      const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+      const mat = press.frontMaterial(sep, 0);
+      mat.uniforms.uProgress.value = reduced ? 1 : 0;
+      const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat);
+      scene.add(quad);
 
       canvas.classList.add('is-live');
 
-      if (reduced) {
-        handle.setProgress(1);
-        return;
+      const onResize = () => {
+        const r = el.getBoundingClientRect();
+        renderer.setSize(r.width, r.height, false);
+      };
+      window.addEventListener('resize', onResize);
+      cleanups.push(() => window.removeEventListener('resize', onResize));
+
+      let t = reduced ? 1 : 0;
+      let raf = 0;
+      let last = performance.now();
+      let settled = false;
+
+      function frame(now: number) {
+        const dt = Math.min((now - last) / 1000, 0.05);
+        last = now;
+        if (!settled) {
+          t = press.advancePrint(t, dt, reduced);
+          mat.uniforms.uProgress.value = t;
+          renderer.render(scene, cam);
+          // Once the ink is dry the image never changes again, so stop
+          // burning frames on a static picture.
+          if (t >= 1) settled = true;
+        }
+        raf = requestAnimationFrame(frame);
       }
+      raf = requestAnimationFrame(frame);
+      cleanups.push(() => cancelAnimationFrame(raf));
 
-      handle.setProgress(0);
-
-      st = ScrollTrigger.create({
-        trigger: el,
-        start: 'top top',
-        end: '+=180%',
-        pin: true,
-        scrub: 0.7,
-        invalidateOnRefresh: true,
-        onUpdate: (self) => handle?.setProgress(self.progress),
+      cleanups.push(() => {
+        sep.dispose();
+        mat.dispose();
+        quad.geometry.dispose();
+        renderer.dispose();
       });
-
-      ro = new ResizeObserver(() => handle?.resize());
-      ro.observe(canvas);
-    };
-
-    gsap.registerPlugin(ScrollTrigger);
-
-    if (img.complete && img.naturalWidth) start();
-    else img.addEventListener('load', start, { once: true });
+    })();
 
     return () => {
-      cancelled = true;
-      img.removeEventListener('load', start);
-      ro?.disconnect();
-      // kill(true) REVERTS the pin. ScrollTrigger's pin wraps this element
-      // in a .pin-spacer, which changes its DOM parent; without the revert
-      // React unmounts against a stale parent and throws
-      // "removeChild: node is not a child of this node".
-      st?.kill(true);
-      handle?.destroy();
+      disposed = true;
+      cleanups.forEach((f) => {
+        try { f(); } catch { /* teardown is best-effort */ }
+      });
     };
-  }, []);
+  }, [src]);
 
   return (
-    /* See PortfolioCarousel: the pin reparents this node, so React needs a
-       wrapper it can safely remove. */
     <div className="pin-host">
-    <div ref={root} className="cs-hero">
-      <div className="cs-hero-media">
-        <img ref={imgRef} src={src} alt={alt} className="cs-hero-img" />
-        <canvas ref={canvasRef} className="cs-hero-canvas" aria-hidden="true" />
-      </div>
+      <div ref={root} className="cs-hero">
+        <div className="cs-hero-media">
+          {/* The floor: what shows with no WebGL, and during the load. */}
+          <img ref={imgRef} src={src} alt={alt} className="cs-hero-img" />
+          <canvas ref={canvasRef} className="cs-hero-canvas" aria-hidden="true" />
+        </div>
 
-      <div className="cs-hero-caption sheet">
-        <span className="t-mono cs-hero-client">{client}</span>
-        <h1 className="t-display cs-hero-title">{title}</h1>
-        <span className="t-mono cs-hero-meta">{meta}</span>
+        <div className="cs-hero-caption sheet">
+          <span className="t-mono cs-hero-client">{client}</span>
+          <h1 className="t-display cs-hero-title">{title}</h1>
+          <span className="t-mono cs-hero-meta">{meta}</span>
+        </div>
       </div>
-    </div>
     </div>
   );
 }

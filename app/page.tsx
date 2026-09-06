@@ -1,18 +1,19 @@
 import Masthead from '@/components/Masthead';
 import StatementHold from '@/components/StatementHold';
 import WorkGrid from '@/components/WorkGrid';
-import PortfolioCarousel from '@/components/PortfolioCarousel';
 import ContactBlock from '@/components/ContactBlock';
 import SiteFooter from '@/components/SiteFooter';
-import { ALL_WORK, DISCIPLINES, INDUSTRIES, FEATURED } from '@/lib/work';
+import { ALL_WORK, DISCIPLINES, INDUSTRIES } from '@/lib/work';
 
 export default function Home() {
   return (
     <>
       <Masthead />
 
-      {/* The featured nine are the pinned carousel, not a grid. */}
-      <PortfolioCarousel items={FEATURED} />
+      {/* The press rail in the hero IS the featured-work presentation now,
+          so the depth-stack carousel that used to sit here has been removed
+          — it showed the same projects a second time. Restore by putting
+          <PortfolioCarousel items={FEATURED} /> back on this line. */}
 
       <StatementHold />
 
