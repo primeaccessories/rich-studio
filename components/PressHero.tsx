@@ -31,6 +31,34 @@ export const PRESS_PROJECTS: PressProject[] = [
 const N = PRESS_PROJECTS.length;
 export const PRESS_START = Math.floor((N - 1) / 2);
 
+/* ---------- OPENING A BOOK ----------
+   A cover has weight. You lift it, it goes over centre, its own mass
+   takes it the rest of the way, it meets the table and settles. The
+   motion is nearly all in that last third — a symmetrical ease reads as
+   a panel rotating, not as a book being opened.
+
+   Time-based rather than a per-frame lerp: the curve is then the same
+   curve at any frame rate, and the settle at the end is not swallowed by
+   one slow frame. */
+const OPEN_SECS = 0.92;
+const SHUT_SECS = 0.28;
+/* Just under flat. A cover that lands at exactly 180 degrees reads as a
+   diagram; a real one keeps a few degrees of its own spring. */
+const OPEN_ANGLE = Math.PI * 0.985;
+/* A beat with the spread actually open, before the page takes over. */
+const OPEN_HOLD_MS = 520;
+
+function openEase(x: number): number {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  // Slow off the mark while the cover is lifted...
+  const s = x * x * (3 - 2 * x);
+  // ...then it lands, and rebounds a couple of degrees before settling.
+  const c = 0.35;
+  const p = s - 1;
+  return 1 + p * p * ((c + 1) * p + c);
+}
+
 export default function PressHero({
   onIndex,
   onOpen,
@@ -510,7 +538,9 @@ export default function PressHero({
       // long enough to read; drift would otherwise carry it straight off.
       let holdUntil = 0;
       // A press on any sheet flies it to centre, opens it, then navigates.
-      let opening: { i: number; slug: string; at: number } | null = null;
+      let opening:
+        | { i: number; slug: string; at: number; settledAt?: number }
+        | null = null;
       let lastScrollY = window.scrollY;
       const pointer = { x: 0, y: 0 };
       let dragging = false, dragStart = 0, posStart = 0, moved = 0, lastX = 0;
@@ -601,7 +631,12 @@ export default function PressHero({
             // already drifted past it.
             target = Math.round(pos) + wrapRel(i - Math.round(pos));
             focusTarget = 1;
-            slabs[i].printT = -0.1;          // print it again as it opens
+            // Deliberately NOT re-printed. Running the press pass again on
+            // press turned the one book you had just chosen into a blank
+            // sheet resolving out of halftone for the whole of its flight
+            // to centre — so you pressed an image and watched a different,
+            // emptier thing arrive. The ink belongs at the ARRIVAL: the
+            // case study's own hero prints itself when the page lands.
             holdUntil = performance.now() + 8000;
             const slug = PRESS_PROJECTS[i].slug;
             opening = { i, slug, at: performance.now() };
@@ -613,7 +648,7 @@ export default function PressHero({
                 opening = null;
                 runCinematic(i, slug);
               }
-            }, 2900);
+            }, 5600);
           }
         }
         // Deliberately no snap-to-integer here. The rail is always
@@ -889,14 +924,30 @@ export default function PressHero({
         // Hand over once the sheet has actually arrived and opened, so the
         // navigation lands on the beat rather than at a fixed delay that is
         // right for exactly one travel distance.
+        // Nothing to instruct once a book is on its way open — but this is
+        // computed from scratch every frame rather than forced to 0 once,
+        // so cancelling with Escape brings the hint back rather than
+        // leaving it hidden for good.
+        if (hintRef.current) {
+          hintRef.current.style.opacity =
+            opening ? '0' : String(Math.max(0, 1 - scrollT * 1.6));
+        }
+
         if (opening) {
           // Wait for the book to be OPEN, not merely arrived — the whole
           // point is that you see the page before the page loads.
+          const square =
+            Math.abs(wrapRel(opening.i - pos)) < 0.06 && focus > 0.86;
+          // FULLY open, not nearly: the cinematic used to take over at 0.9,
+          // which is before the cover has finished swinging, so the spread
+          // was never once seen at rest.
+          if (square && slabs[opening.i].openT >= 1 && !opening.settledAt) {
+            opening.settledAt = performance.now();
+          }
           const arrived =
-            Math.abs(wrapRel(opening.i - pos)) < 0.06 &&
-            focus > 0.86 &&
-            slabs[opening.i].openT > 0.9;
-          const overdue = performance.now() - opening.at > 3200;  // never strand a press
+            !!opening.settledAt &&
+            performance.now() - opening.settledAt > OPEN_HOLD_MS;
+          const overdue = performance.now() - opening.at > 5200;  // never strand a press
           if (arrived || overdue) {
             const { slug, i } = opening;
             opening = null;
@@ -963,12 +1014,25 @@ export default function PressHero({
           // flying reads as a glitch rather than as a book.
           const isOpening = !!opening && opening.i === i;
           const atCentre = Math.abs(rel) < 0.12;
-          const wantOpen = isOpening && atCentre ? 1 : 0;
-          s.openT = lerp(s.openT, wantOpen, wantOpen ? 0.09 : 0.22);
-          // eased, so it swings rather than turning at a constant rate
-          const e2 = s.openT * s.openT * (3 - 2 * s.openT);
-          s.hinge.rotation.y = -e2 * 2.42;          // ~139 degrees
-          s.group.rotation.y += e2 * 0.30;          // turn the spread to face us
+          // Arrive, square up, THEN open. Starting the cover while the book
+          // is still flying is most of why it never read as a book.
+          const wantOpen = isOpening && atCentre && focus > 0.55;
+          s.openT = Math.max(0, Math.min(1,
+            s.openT + (wantOpen ? dt / OPEN_SECS : -dt / SHUT_SECS)));
+          const e2 = openEase(s.openT);
+
+          s.hinge.rotation.y = -e2 * OPEN_ANGLE;
+
+          // The cover swings out to the LEFT of the spine, so the open
+          // book is twice as wide as the shut one and its centre is half a
+          // leaf left of the block. Without this shift the spread opens
+          // off to one side of the screen instead of into the middle.
+          s.group.position.x = x + e2 * (SLAB_W / 2);
+
+          // Square to the camera once it is open: a spread you are reading
+          // is not yawed away from you, and the mouse parallax that gives
+          // the shut rail its life just skews the page.
+          s.group.rotation.y = yaw * (1 - e2 * 0.92);
 
           s.shadow.position.set(x, -SLAB_H / 2 - 0.45 + y * 0.25, z - 0.1);
           (s.shadow.material as import('three').MeshBasicMaterial).opacity =
