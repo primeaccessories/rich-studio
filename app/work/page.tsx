@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
-import WorkGrid from '@/components/WorkGrid';
-import ContactBlock from '@/components/ContactBlock';
+import WorkBrowser from '@/components/WorkBrowser';
 import SiteFooter from '@/components/SiteFooter';
-import { ALL_WORK, DISCIPLINES, INDUSTRIES } from '@/lib/work';
+import { ALL_WORK, DISCIPLINES, INDUSTRIES, INDUSTRY_FACETS } from '@/lib/work';
 
 export const metadata: Metadata = {
   title: 'Work',
@@ -23,14 +22,13 @@ export default function WorkIndex() {
         </p>
       </header>
 
-      <WorkGrid
+      <WorkBrowser
         items={ALL_WORK}
         disciplines={DISCIPLINES}
         industries={INDUSTRIES}
-        heading="ALL"
+        facets={INDUSTRY_FACETS}
       />
 
-      <ContactBlock />
       <SiteFooter />
     </>
   );

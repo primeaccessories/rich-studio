@@ -2328,3 +2328,115 @@ button:disabled,
 [aria-disabled='true'] {
   cursor: not-allowed;
 }
+
+/* ============================================================
+   THE INDEX BY INDUSTRY
+   Categories set large and centred, a sample from that category
+   standing either side of the live one. The names are the control; the
+   sheets are there to say what is behind the word.
+   ============================================================ */
+
+.cats {
+  padding: clamp(48px, 8vh, 96px) var(--margin) clamp(32px, 5vh, 64px);
+  background: var(--paper);
+  /* So the names can be sized off the space they actually have. */
+  container-type: inline-size;
+}
+
+.cats-head { margin-bottom: clamp(24px, 4vh, 48px); }
+
+.cats-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 60svh;
+}
+
+.cats-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+.cats-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 14px;
+  background: none;
+  border: 0;
+  padding: 2px 0;
+  color: var(--ink-22);
+  /* Big, but it has to hold PROFESSIONAL SERVICES — 21 characters — and
+     clear a 260px sheet on each side. Sized in cqw off this section's own
+     content box, NOT vw (which ignores the scrollbar) and NOT a percentage
+     (which in font-size resolves against the parent's font size, not its
+     width — that silently pinned every name to the 24px floor). */
+  font-size: clamp(22px, 5.6cqw, 76px);
+  line-height: 1.04;
+  letter-spacing: -0.01em;
+  transition: color 260ms var(--ease-out);
+}
+
+/* The live line is the one being read; the rest step back so the stack
+   still scans as a list rather than seven competing headlines. */
+.cats-item:hover,
+.cats-item:focus-visible,
+.cats-item.is-on {
+  color: var(--ink);
+}
+
+.cats-count {
+  font-size: 0.2em;
+  color: var(--ink-45);
+  letter-spacing: 0.08em;
+}
+
+/* ---- the flanking sheets ---- */
+.cats-plate {
+  position: absolute;
+  top: 50%;
+  width: clamp(150px, 17vw, 260px);
+  aspect-ratio: 3 / 4;
+  transform: translateY(-50%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.cats-plate-l { left: 0; }
+.cats-plate-r { right: 0; }
+
+.cats-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  /* A press sheet, not a floating photograph. */
+  box-shadow: 0 18px 44px rgb(10 10 10 / 0.16);
+  transition: opacity 420ms var(--ease-out), transform 620ms var(--ease-out);
+}
+
+.cats-plate-l .cats-img { transform: translate3d(-14px, 0, 0) rotate(-1.4deg); }
+.cats-plate-r .cats-img { transform: translate3d(14px, 0, 0) rotate(1.4deg); }
+
+.cats-img.is-live {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) rotate(0deg);
+}
+
+/* Below the point where a 260px sheet and the longest name can share a
+   line, the sheets would sit on the type. The names are the content and
+   they stay. */
+@media (max-width: 1024px) {
+  .cats-plate { display: none; }
+  .cats-stage { min-height: 0; }
+  .cats-item { font-size: clamp(22px, 7vw, 44px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cats-img { transition: opacity 1ms; transform: none !important; }
+}

@@ -26,14 +26,27 @@ export default function WorkGrid({
   disciplines,
   industries,
   heading,
+  industry,
+  onIndustry,
 }: {
   items: WorkItem[];
   disciplines: string[];
   industries: string[];
   heading: string;
+  /* Optionally controlled, so the industry index above the grid and these
+     buttons are the same selection rather than two that disagree. Left
+     out, the grid keeps its own state exactly as before. */
+  industry?: string;
+  onIndustry?: (v: string) => void;
 }) {
   const [disc, setDisc] = useState('ALL');
-  const [ind, setInd] = useState('ALL');
+  const [ownInd, setOwnInd] = useState('ALL');
+  const controlled = industry !== undefined;
+  const ind = controlled ? industry : ownInd;
+  const setInd = (v: string) => {
+    if (!controlled) setOwnInd(v);
+    onIndustry?.(v);
+  };
   const drop = useDropTransition();
 
   const filtered = useMemo(
