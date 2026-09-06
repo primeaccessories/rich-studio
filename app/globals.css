@@ -1885,7 +1885,11 @@ a {
 .stage {
   position: relative;
   z-index: 1;
-  height: 74svh;
+  /* The stage takes the screen minus the band and a margin, so the ink
+     lands ON the fold rather than wherever a fixed height leaves it.
+     --band-h is measured and published by PressHero; the fallback is a
+     sane desktop band for the frames before it arrives. */
+  height: calc(100svh - var(--band-h, 170px) - var(--hero-gap));
   min-height: 380px;
   overflow: hidden;
   background: var(--press-paper);
@@ -2031,7 +2035,7 @@ a {
 }
 
 @media (max-width: 820px) {
-  .stage { height: 64svh; min-height: 320px; }
+  .stage { min-height: 300px; }
 }
 
 /* Studio info lives in the band, not in fixed chrome. As a fixed block it
@@ -2281,6 +2285,7 @@ a:focus-visible .roll > span,
    Sits at 59: above the grain (55), below the furniture (60), the HUD
    (61) and the nav (62), so the crop marks and type stay on top of it. */
 :root {
+  --hero-gap: clamp(10px, 1.6vh, 22px);
   --head-h: 72px;
   /* NOT --paper. The landing's ground is the WebGL backdrop, which renders
      lighter than the CSS token: measured across the top of the stage it is

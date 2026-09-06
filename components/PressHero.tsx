@@ -960,15 +960,48 @@ export default function PressHero({
         });
         cleanups.push(() => bandST.kill(true));
 
-        /* Pinning FREEZES the band's height into an inline style, and it
-           was measured before the webfonts landed — so the frozen box came
-           out shorter than the text that ended up in it, and the strap was
-           cut through the middle with the colophon below the cut.
+        /* THE BAND SITS ON THE FOLD.
 
-           A hard refresh once the fonts are in re-measures the pin itself;
-           a soft one only recalculates start and end. */
+           The stage used to be a flat 74svh, so wherever that left the
+           band was where it sat — about 58px of paper showing beneath it
+           on a laptop. It should land ON the bottom of the screen with a
+           margin, so the hero reads as one full page.
+
+           The band's height is not knowable in CSS: it depends on the
+           strap's wrap, the featured title's length and the webfonts. So
+           it is measured and published as --band-h, and the stage takes
+           whatever is left. Re-measured on resize, because a rewrap
+           changes it.
+
+           A HARD refresh after, not a soft one: this changes the stage's
+           height, so the pins have to be re-measured, not merely have
+           their start and end recalculated. */
+        const publishBandHeight = () => {
+          if (disposed) return;
+          const h = Math.round(bandEl.getBoundingClientRect().height);
+          if (!h) return;
+          const prev = document.documentElement.style.getPropertyValue('--band-h');
+          if (prev === `${h}px`) return;          // nothing moved; do not thrash
+          document.documentElement.style.setProperty('--band-h', `${h}px`);
+          ScrollTrigger.refresh(true);
+        };
+
         document.fonts?.ready.then(() => {
-          if (!disposed) ScrollTrigger.refresh(true);
+          if (disposed) return;
+          ScrollTrigger.refresh(true);
+          publishBandHeight();
+        });
+
+        let bandRz = 0;
+        const onBandResize = () => {
+          window.clearTimeout(bandRz);
+          bandRz = window.setTimeout(publishBandHeight, 180);
+        };
+        window.addEventListener('resize', onBandResize);
+        cleanups.push(() => {
+          window.clearTimeout(bandRz);
+          window.removeEventListener('resize', onBandResize);
+          document.documentElement.style.removeProperty('--band-h');
         });
       }
 
