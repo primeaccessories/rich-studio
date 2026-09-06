@@ -57,6 +57,11 @@ export default function PressChrome() {
     <>
       <ColumnRules />
 
+      {/* The header's own ground. Fixed chrome over a scrolling page has
+          to sit on something of its own, or it sits on whatever happens to
+          be passing underneath and the slug line vanishes into the band. */}
+      <div className="head-bar" aria-hidden="true" />
+
       <div className="furniture" aria-hidden="true">
         <span className="crop crop-tl" />
         <span className="crop crop-tr" />

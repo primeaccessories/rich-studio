@@ -2256,33 +2256,70 @@ a:focus-visible .roll > span,
   .press-gl { transition: none; }
 }
 
-/* ---------- THE PRINTER'S FIST ----------
-   The manicule is a real mark from the print trade — the hand compositors
-   set in the case to point the reader at something. On a site built around
-   a press it is the honest pointer, so it stands in for `cursor: pointer`
-   wherever something can actually be pressed.
 
-   Two declarations, not one: the plain url() is the floor, and the
-   image-set() overrides it where supported so the mark stays crisp on a
-   HiDPI screen. The `pointer` keyword at the end is the required fallback
-   if the image itself fails. Hotspot is the fingertip. */
-a[href],
+/* ---------- THE HEADER KEEPS ITS GROUND ----------
+   The top chrome is fixed, and it used to be transparent: it took its
+   colour from --act and sat on whatever section was scrolling under it,
+   so the slug line disappeared as soon as the black band arrived. It now
+   has the landing's own paper behind it, permanently — the header does
+   not change as you scroll.
+
+   Sits at 59: above the grain (55), below the furniture (60), the HUD
+   (61) and the nav (62), so the crop marks and type stay on top of it. */
+:root {
+  --head-h: 72px;
+  /* NOT --paper. The landing's ground is the WebGL backdrop, which renders
+     lighter than the CSS token: measured across the top of the stage it is
+     248-250 / 246-250 / 247-249, i.e. #f9f8f8 with about two levels of
+     grain either side. Matching the token instead left a visible step
+     where the header met the hero. Re-measure this if the backdrop
+     shader's paper or vignette changes. */
+  --head-ground: #f9f8f8;
+}
+
+.head-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--head-h);
+  z-index: 59;
+  pointer-events: none;
+  /* Solid behind the type, dissolving over the last few pixels. The type
+     ends at 58px, so it always sits on solid ground; the fade only spans
+     the empty strip below it, which means no hard edge against the paper
+     sections or the black band either. */
+  background: linear-gradient(
+    to bottom,
+    var(--head-ground) 0,
+    var(--head-ground) calc(var(--head-h) - 14px),
+    transparent 100%
+  );
+}
+
+/* A fixed ground means fixed ink. These must stop following --act, or
+   they will invert against a header that no longer changes. */
+.hud-l,
+.hud-r,
+.site-nav,
+.site-nav-link,
+.site-nav-mark {
+  color: var(--ink);
+}
+
+/* Everything pressable gets the hand. The browser's own pointing hand,
+   not a drawn one: a bitmap at cursor size reads as an image stuck to the
+   screen rather than as the pointer, and it cannot follow the platform or
+   the user's own cursor settings. Links get this from the UA stylesheet;
+   buttons and the ARIA roles do not, so they are named here. */
 button,
 summary,
 label[for],
 [role='tab'],
-[role='button'],
-.stage {
-  cursor: url('/cursor/fist.png') 12 3, pointer;
-  cursor: image-set(
-      url('/cursor/fist.png') 1x,
-      url('/cursor/fist@2x.png') 2x
-    ) 12 3, pointer;
+[role='button'] {
+  cursor: pointer;
 }
 
-/* Don't point at something that cannot be pressed. .stage.dragging and
-   .stage.focused already carry grabbing / zoom-out and outrank this on
-   specificity, so the rail keeps its own states while it is in use. */
 button:disabled,
 [aria-disabled='true'] {
   cursor: not-allowed;
