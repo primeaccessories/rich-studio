@@ -924,18 +924,21 @@ export default function PressHero({
          transformed by ScrollSmoother, and sticky inside a transformed
          ancestor tracks the transform rather than the viewport. */
       let scrollT = 0;
+      /* The HERO is pinned, not the stage: the rail and the band on the
+         fold beneath it, held and released as one thing.
+
+         WITH spacing this time. Without it nothing reserves the hold, so
+         the next section rides straight up over a hero that is still
+         pinned — measured: the statement's top reached 88px while the
+         hero was supposedly being held. The spacer is what lets the hero
+         have the screen to itself, and then hand it over. */
+      const heroHost = stage.closest<HTMLElement>('.hero-host') ?? stage;
       const st = ScrollTrigger.create({
-        trigger: stage,
+        trigger: heroHost,
         start: 'top top',
         end: '+=100%',
-        pin: true,
+        pin: heroHost,
         pinType: 'transform',
-        // pinSpacing:false reproduces the position:sticky behaviour the
-        // stage was designed around — no spacer is inserted, so the band
-        // flows straight after the stage and rides up over it. With the
-        // default spacing ScrollTrigger pushes the band down by the pin
-        // distance and leaves a band of empty paper under the hero.
-        pinSpacing: false,
         scrub: true,
         invalidateOnRefresh: true,
         onUpdate: (self) => {
@@ -945,60 +948,13 @@ export default function PressHero({
       });
       cleanups.push(() => st.kill(true));
 
-      /* ---------- the band hooks under the header ----------
-         The band rides up over the pinned stage, and used to carry
-         straight on past the top edge and away. It now catches under the
-         header and holds there while the page keeps moving, then lets go.
-
-         Built here rather than in Masthead, which owns the markup, for
-         one reason: ordering. A pin created before ScrollSmoother exists
-         measures against the wrong scroller, and React runs a child's
-         effects before its parent's — so a pin set up in Masthead would
-         race the one below it. This effect already runs after both. */
+      /* The band has no pin of its own any more. It is inside .hero-host,
+         so the hero's pin holds it: stuck to the rail above it rather
+         than hooking itself to the header on a separate schedule. What is
+         still needed from here is --band-h, which the stage's height is
+         calculated from. */
       const bandEl = document.querySelector<HTMLElement>('.hero-band');
       if (bandEl) {
-        const headH = () =>
-          parseFloat(
-            getComputedStyle(document.documentElement).getPropertyValue('--head-h'),
-          ) || 72;
-        const bandST = ScrollTrigger.create({
-          trigger: bandEl,
-          start: () => `top ${headH()}px`,
-          /* Held for exactly its own height, so it lets go at the moment
-             the next section's top reaches its foot. Any longer and the
-             statement of practice carries on up UNDERNEATH the ink — with
-             no spacer there is nothing holding it back — and the first
-             lines of it disappear into the black. */
-          end: () => '+=' + Math.round(bandEl.getBoundingClientRect().height),
-          pin: true,
-          pinType: 'transform',
-          /* No spacer. With one, pinning reserved 294px of the flow below
-             the band — which showed the pinned hero through it until that
-             was covered, and then read as a slab of black sitting under
-             the colophon at rest. Without it the band simply holds while
-             the section below rides up underneath, which is what a hooked
-             band should do, and the ink ends where the band ends. */
-          pinSpacing: false,
-          invalidateOnRefresh: true,
-        });
-        cleanups.push(() => bandST.kill(true));
-
-        /* THE BAND SITS ON THE FOLD.
-
-           The stage used to be a flat 74svh, so wherever that left the
-           band was where it sat — about 58px of paper showing beneath it
-           on a laptop. It should land ON the bottom of the screen with a
-           margin, so the hero reads as one full page.
-
-           The band's height is not knowable in CSS: it depends on the
-           strap's wrap, the featured title's length and the webfonts. So
-           it is measured and published as --band-h, and the stage takes
-           whatever is left. Re-measured on resize, because a rewrap
-           changes it.
-
-           A HARD refresh after, not a soft one: this changes the stage's
-           height, so the pins have to be re-measured, not merely have
-           their start and end recalculated. */
         const publishBandHeight = () => {
           if (disposed) return;
           const h = Math.round(bandEl.getBoundingClientRect().height);

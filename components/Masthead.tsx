@@ -31,16 +31,22 @@ export default function Masthead() {
 
   return (
     <>
+      {/* THE HERO IS ONE THING: the rail, and the band on the fold
+          beneath it. They are pinned together as .hero-host and released
+          together, so the band is stuck to the hero rather than hooking
+          itself to the header on its own schedule.
+
+          .pin-host outside it is not decoration: ScrollTrigger reparents
+          whatever it pins into a generated .pin-spacer, and React would
+          then unmount against a parent that no longer holds it. That
+          wrapper is a node React owns and ScrollTrigger never touches. */}
+      <div className="pin-host">
+      <div className="hero-host">
       <PressHero
         onIndex={setIdx}
         onOpen={(slug) => router.push(`/work/${slug}`)}
       />
 
-      {/* .pin-host is not decoration: ScrollTrigger's pin reparents the
-          band into a .pin-spacer, and React would then unmount it against
-          a parent that no longer holds it. The wrapper is a node React
-          owns and ScrollTrigger never touches. */}
-      <div className="pin-host band-host">
       <section className="masthead-foot hero-band">
         {/* No hard breaks. They forced three lines at every width, which
             was most of the band's height — it now wraps to its own
@@ -98,6 +104,7 @@ export default function Masthead() {
           ))}
         </ul>
       </section>
+      </div>
       </div>
     </>
   );
