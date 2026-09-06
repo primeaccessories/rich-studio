@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 /**
@@ -139,11 +140,20 @@ export default function PressChrome() {
       </div>
 
       {/* The slug line. Screen-reader-hidden: it is furniture, not content. */}
-      <div className="hud hud-l t-mono" aria-hidden="true">
-        <span className="t-mono-b"><span className="rc-mark" />RICH COLVILL</span>
-        <br />
-        BRANDING / DESIGN
-      </div>
+      {/* The slug line is now the way home. It was aria-hidden furniture;
+          as a link it has to be reachable and named, so the hidden
+          attribute goes and it gets a label of its own — "RICH COLVILL
+          BRANDING / DESIGN" read out as a link would say nothing about
+          where it goes. */}
+      <Link
+        href="/"
+        className="hud hud-l t-mono hud-home"
+        aria-label="Rich Colvill — home"
+      >
+        <span className="t-mono-b" aria-hidden="true"><span className="rc-mark" />RICH COLVILL</span>
+        <br aria-hidden="true" />
+        <span aria-hidden="true">BRANDING / DESIGN</span>
+      </Link>
 
       {/* Was the CMYK screen angles and the studio clock. The angles were
           furniture that did not match the separation the shader actually

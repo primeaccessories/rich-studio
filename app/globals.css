@@ -2529,3 +2529,18 @@ button:disabled,
 @media (max-width: 720px) {
   .footer-contact { grid-template-columns: 1fr; }
 }
+
+/* The slug line doubles as the way home. It is furniture, so it keeps its
+   weight — but it has to answer a pointer and a keyboard like any link. */
+.hud-home {
+  pointer-events: auto;
+  color: inherit;
+  transition: opacity 200ms var(--ease-out);
+}
+
+.hud-home:hover { opacity: 1; }
+
+.hud-home:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
+}

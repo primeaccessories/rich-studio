@@ -856,6 +856,28 @@ export default function PressHero({
           (proj.page || proj.hero || proj.art || '') + '">';
         document.body.appendChild(el);
 
+        /* ONE page, not two.
+
+           The overlay lands exactly over the opened book and shows the
+           same capture — but the book is still there underneath, drawn
+           across two leaves with a fold, while the overlay is that image
+           cover-fitted to a rectangle. Two versions of the same page,
+           very slightly apart, and the second appearing over the first is
+           what read as "it loads the page, then another page loads".
+
+           A short dissolve rather than a cut, because the two are the
+           same picture but not the same rendering, and swapping them
+           outright shows the seam. Over 180ms it reads as one page
+           settling, and the book is gone by the end of it. */
+        el.style.opacity = '0';
+        gsap.to(el, {
+          opacity: 1,
+          duration: 0.18,
+          ease: 'none',
+          onComplete: () => { if (slabs[i]) slabs[i].group.visible = false; },
+        });
+        cleanups.push(() => { if (slabs[i]) slabs[i].group.visible = true; });
+
         const s0 = r.width / vw;
         gsap.fromTo(el, {
           x: r.left,
