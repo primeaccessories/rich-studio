@@ -55,13 +55,16 @@ export default function StatementHold() {
          are identical the sentence never disappears and never changes —
          it just turns over, the way a counter does.
 
-         The height is measured BEFORE the duplicate goes in. Afterwards
-         the line is two faces tall and would measure the window at twice
-         the size, which shows both copies at once and the roll goes. */
+         The window is sized from a FACE, measured after the faces are in
+         — not from the line box beforehand. Those two are not the same
+         number: the line box carries the paragraph's leading, a face is
+         its own content box, and sizing the window to the first while the
+         roll travels by the second leaves them out of step by a few
+         pixels every line. What you see then is the outgoing copy hanging
+         below the incoming one, both legible at once. */
       const rolls: HTMLElement[] = [];
       split.lines.forEach((line) => {
         const el = line as HTMLElement;
-        const h = el.getBoundingClientRect().height;
         const inner = el.innerHTML;
 
         const roll = document.createElement('span');
@@ -75,8 +78,14 @@ export default function StatementHold() {
 
         el.innerHTML = '';
         el.appendChild(roll);
-        el.style.height = `${h}px`;
         rolls.push(roll);
+      });
+
+      // Second pass, so every face is laid out before anything is measured.
+      rolls.forEach((roll) => {
+        const face = roll.firstElementChild as HTMLElement;
+        (roll.parentElement as HTMLElement).style.height =
+          `${face.getBoundingClientRect().height}px`;
       });
 
       // NB: the from value is declared on the tween below, not set here.
