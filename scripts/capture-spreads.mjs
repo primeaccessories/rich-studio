@@ -51,6 +51,15 @@ try {
   for (const slug of SLUGS) {
     const page = await ctx.newPage();
     await page.goto(`${ORIGIN}/work/${slug}`, { waitUntil: 'domcontentloaded' });
+
+    /* The right HUD reads the VISITOR's location and their local time,
+       ticking. Baking it into the capture would print one machine's clock
+       into every book — so a reader in Tokyo would open a book and find
+       London's time sitting in the corner, contradicting the live header
+       right above it. A printed page has no clock; leave the corner
+       empty. Everything else in the header captures as it is. */
+    await page.addStyleTag({ content: '.hud-r { visibility: hidden !important; }' });
+
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(2600);
     await page.evaluate(() => window.scrollTo(0, 0));
