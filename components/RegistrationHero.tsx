@@ -106,7 +106,24 @@ export default function RegistrationHero({
       const scene = new THREE.Scene();
       const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
       const mat = press.frontMaterial(sep, 0);
-      mat.uniforms.uProgress.value = reduced ? 1 : 0;
+      /* Arrived from the rail, or landed here cold?
+
+         Landing cold, the page prints itself — that is the effect and it
+         stays. Arriving from the rail, the reader has just watched this
+         exact page zoom up to fill the screen; printing it again drops
+         them from a finished page onto a halftone, and that drop is the
+         flicker. So the ink is already dry when they get here.
+
+         The flag is consumed on read, so a reload or a direct visit to
+         this same URL still prints. */
+      let fromRail = false;
+      try {
+        fromRail = sessionStorage.getItem('rc:from-rail') === '1';
+        if (fromRail) sessionStorage.removeItem('rc:from-rail');
+      } catch { /* private mode: it prints, which is the safe default */ }
+
+      const PRINT_FROM = fromRail ? 1 : 0;
+      mat.uniforms.uProgress.value = reduced ? 1 : PRINT_FROM;
       const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat);
       scene.add(quad);
 
@@ -119,7 +136,7 @@ export default function RegistrationHero({
       window.addEventListener('resize', onResize);
       cleanups.push(() => window.removeEventListener('resize', onResize));
 
-      let t = reduced ? 1 : 0;
+      let t = reduced ? 1 : PRINT_FROM;
       let raf = 0;
       let last = performance.now();
       let settled = false;
@@ -161,7 +178,22 @@ export default function RegistrationHero({
       <div ref={root} className="cs-hero">
         <div className="cs-hero-media">
           {/* The floor: what shows with no WebGL, and during the load. */}
-          <img ref={imgRef} src={src} alt={alt} className="cs-hero-img" />
+          {/* crossOrigin is not decoration here. The rail preloads this
+              exact hero with crossOrigin="anonymous" so it can separate
+              it; a request WITHOUT the attribute is a different cache
+              entry, so this page was re-downloading an image the browser
+              already had. The press pass waits on that download, which is
+              why it used to start only after the cinematic had faded off
+              it — the ink landing on an image the reader had already been
+              looking at for a second. Matching the attribute makes it a
+              cache hit, and the print starts under the overlay. */}
+          <img
+            ref={imgRef}
+            src={src}
+            alt={alt}
+            className="cs-hero-img"
+            crossOrigin="anonymous"
+          />
           <canvas ref={canvasRef} className="cs-hero-canvas" aria-hidden="true" />
         </div>
 

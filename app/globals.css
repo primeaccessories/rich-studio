@@ -583,8 +583,8 @@ a {
      shares that class and is deliberately large. The strap is a slug line
      in the band under the rail; it does not need to compete with the work
      above it. */
-  font-size: clamp(1.1rem, 2.5vw, 2.25rem);
-  line-height: 1.06;
+  font-size: clamp(1rem, 2vw, 1.7rem);
+  line-height: 1.08;
 }
 
 .masthead-feature {
@@ -1541,7 +1541,7 @@ a {
 @media (max-width: 900px) {
   /* 6 columns at this width: the two blocks stack, both full width. */
   .masthead-strap { grid-column: 1 / span 6; }
-  .masthead-feature { grid-column: 1 / span 6; margin-top: 22px; }
+  .masthead-feature { grid-column: 1 / span 6; margin-top: 12px; }
 }
 
 /* The card box must equal the PLATE box. The caption was inside the flow,
@@ -2038,7 +2038,17 @@ a {
   opacity: 0.72;
 }
 
-.hero-band { padding-bottom: clamp(24px, 3.5vh, 44px); }
+/* THE BAND'S OWN MEASURE
+   Three separate .masthead-foot rules stack padding onto this element —
+   it inherits a masthead's spacing while being a slug band under the
+   rail, which is what made it a third of the screen on a laptop. It sets
+   its own here, and this rule comes last so it wins all three. */
+.hero-band {
+  padding-top: clamp(12px, 1.8vh, 22px);
+  padding-bottom: clamp(12px, 1.8vh, 22px);
+  gap: clamp(10px, 1.4vw, 18px);
+  row-gap: clamp(10px, 1.6vh, 18px);
+}
 
 @media (max-width: 640px) {
   .colophon { flex-direction: column; gap: 6px; }
@@ -2113,7 +2123,10 @@ a {
   overflow: hidden;
   background: var(--ink);
   pointer-events: none;
-  will-change: left, top, width, height;
+  will-change: left, top, width, height, opacity, transform;
+  /* The fade scales from the middle, so the dissolve reads as continuing
+     through the page rather than drifting off one corner. */
+  transform-origin: 50% 50%;
   box-shadow: 0 40px 120px rgba(10, 10, 10, 0.35);
 }
 

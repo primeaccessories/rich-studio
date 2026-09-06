@@ -42,12 +42,11 @@ export default function Masthead() {
           owns and ScrollTrigger never touches. */}
       <div className="pin-host band-host">
       <section className="masthead-foot hero-band">
+        {/* No hard breaks. They forced three lines at every width, which
+            was most of the band's height — it now wraps to its own
+            measure, which is two lines wide and one narrow. */}
         <p className="t-statement masthead-strap" data-split>
-          BRANDING / DESIGN /
-          <br />
-          CREATIVE PRODUCTION
-          <br />
-          STUDIO
+          BRANDING / DESIGN / CREATIVE PRODUCTION STUDIO
         </p>
 
         <div className="masthead-feature" aria-live="polite" aria-atomic="true">

@@ -848,15 +848,48 @@ export default function PressHero({
           duration: 0.86,
           ease: 'expo.inOut',
           onComplete: () => {
+            /* Tell the case study it is being arrived AT, not loaded.
+
+               Its hero runs the press pass on mount, which is right for
+               someone landing on the page cold — but wrong straight after
+               this, where the reader has just watched that exact page zoom
+               to fill the screen. Printing it again drops them from a
+               finished page to a halftone, which is the flicker. */
+            try {
+              sessionStorage.setItem('rc:from-rail', '1');
+            } catch { /* private mode: the page prints, which is survivable */ }
+
             onOpenRef.current?.(slug);
-            // Hold through the route change, then dissolve onto the real
-            // page — which is the same image, full bleed.
-            window.setTimeout(() => {
-              gsap.to(el, {
-                opacity: 0, duration: 0.32, ease: 'power2.out',
-                onComplete: () => { el.remove(); if (cineEl === el) cineEl = null; },
-              });
-            }, 340);
+
+            /* THE HAND-OFF.
+
+               The capture is a fixed 1520x1000 frame of the page; the
+               reader's window is some other size, and the page is
+               RESPONSIVE — so the two are never the same layout, only the
+               same artwork. Cutting between them reads as a flicker, and
+               no amount of cropping fixes that because the destination
+               reflows rather than scales.
+
+               So it dissolves rather than cuts, and keeps moving while it
+               does: the overlay eases on past the end of its own zoom as
+               it fades, which carries the eye through the difference
+               instead of presenting it as a jump cut.
+
+               Two frames, then the hold: one to let the route commit and
+               one to let the new page paint, so the fade is a crossfade
+               onto something that is actually there rather than onto
+               whatever the browser has managed so far. */
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+              window.setTimeout(() => {
+                gsap.to(el, {
+                  opacity: 0,
+                  scale: 1.045,
+                  duration: 0.62,
+                  ease: 'power2.inOut',
+                  onComplete: () => { el.remove(); if (cineEl === el) cineEl = null; },
+                });
+              }, 260);
+            }));
           },
         });
         // Never strand the overlay if the timeline is interrupted.
