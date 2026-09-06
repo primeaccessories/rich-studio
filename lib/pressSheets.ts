@@ -420,6 +420,10 @@ export function stampCoverTitle(
   T: Theme,
   PW: number,
   PH: number,
+  /** Rich's creature mark, set beside his name in the band. Optional: if
+   *  it has not loaded the name is stamped on its own and the cover is
+   *  re-stamped when it arrives, rather than the band waiting on it. */
+  mark?: HTMLImageElement | null,
 ) {
   const ctx = c.getContext('2d', { willReadFrequently: true });
   if (!ctx) return;
@@ -446,9 +450,23 @@ export function stampCoverTitle(
   ctx.fillStyle = T.ink;
   ctx.fillText(name, 56, bandTop + 108);
 
+  /* His mark, then his name. The mark is black on transparency so it sets
+     straight onto the paper of the band — no plate behind it. */
+  const sigY = bandTop + 158;
+  let sigX = 56;
+  if (mark && mark.naturalWidth) {
+    const mh = 34;
+    const mw = Math.round(mh * (mark.naturalWidth / mark.naturalHeight));
+    ctx.globalAlpha = 0.9;
+    // Optically centred on the name's x-height rather than its baseline.
+    ctx.drawImage(mark, sigX, sigY - mh + 7, mw, mh);
+    ctx.globalAlpha = 1;
+    sigX += mw + 14;
+  }
+
   ctx.font = '500 19px "JetBrains Mono", monospace';
   ctx.globalAlpha = 0.6;
-  ctx.fillText('®RICH COLVILL', 56, bandTop + 158);
+  ctx.fillText('®RICH COLVILL', sigX, sigY);
   ctx.globalAlpha = 1;
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);

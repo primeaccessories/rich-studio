@@ -245,6 +245,7 @@ export default function PressHero({
         pageBuilt: boolean;
         heroImg: HTMLImageElement | null;
         pageImg: HTMLImageElement | null;   // the case study page capture
+        artImg: HTMLImageElement | null;    // the cover art, kept to re-stamp
         openT: number;
         mesh: import('three').Mesh;
         shadow: import('three').Mesh;
@@ -331,7 +332,7 @@ export default function PressHero({
 
         slabs.push({
           group, hinge, pageMat, pageMatL, verso: coverBack,
-          openT: 0, pageBuilt: false, heroImg: null, pageImg: null,
+          openT: 0, pageBuilt: false, heroImg: null, pageImg: null, artImg: null,
           mesh, shadow: sh, canvas: c, sep, mats, project: p,
           // Fully printed from the first frame. Running the press pass on
           // load meant landing on a halftone dot field that resolved while
@@ -459,6 +460,31 @@ export default function PressHero({
         hi.src = p.hero;
       });
 
+      /* ---------- his mark, for the band on every cover ----------
+         18KB and same-origin, so it almost always beats the artwork it
+         has to be stamped beside — but almost always is not good enough
+         for a logo that would otherwise be missing from some covers and
+         not others. Any cover already painted when it lands is stamped
+         again. */
+      let markImg: HTMLImageElement | null = null;
+      const mark = new Image();
+      mark.crossOrigin = 'anonymous';
+      mark.decoding = 'async';
+      mark.onload = () => {
+        if (disposed) return;
+        markImg = mark;
+        slabs.forEach((s, i) => {
+          if (!s.artImg) return;
+          try {
+            sheets.paintArt(s.canvas, s.artImg, PW, PH);
+            sheets.stampCoverTitle(s.canvas, s.project, T, PW, PH, markImg);
+            press.refreshSeparation(s.sep, s.canvas, PW, PH);
+          } catch { /* tainted canvas — leave the cover as it is */ }
+          void i;
+        });
+      };
+      mark.src = '/rc-creature.webp';
+
       /* ---------- real artwork ---------- */
       PRESS_PROJECTS.forEach((p, i) => {
         if (!p.art) return;
@@ -471,8 +497,9 @@ export default function PressHero({
         img.onload = () => {
           if (disposed) return;
           try {
+            slabs[i].artImg = img;
             sheets.paintArt(slabs[i].canvas, img, PW, PH);
-            sheets.stampCoverTitle(slabs[i].canvas, p, T, PW, PH);
+            sheets.stampCoverTitle(slabs[i].canvas, p, T, PW, PH, markImg);
             press.refreshSeparation(slabs[i].sep, slabs[i].canvas, PW, PH);
             slabs[i].printT = 1;      // swap in silently; do not re-print
             artLoaded++;
