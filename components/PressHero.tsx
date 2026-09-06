@@ -176,6 +176,12 @@ export default function PressHero({
       const geo = new THREE.BoxGeometry(SLAB_W, SLAB_H, SLAB_D);
 
       interface Slab {
+        group: import('three').Group;
+        hinge: import('three').Object3D;
+        pageMat: import('three').MeshBasicMaterial;
+        pageBuilt: boolean;
+        heroImg: HTMLImageElement | null;
+        openT: number;
         mesh: import('three').Mesh;
         shadow: import('three').Mesh;
         canvas: HTMLCanvasElement;
@@ -194,18 +200,61 @@ export default function PressHero({
         const side = (tex: import('three').Texture, tint: number) =>
           new THREE.MeshBasicMaterial({ map: tex, color: new THREE.Color(tint), transparent: true });
 
+        // The BLOCK is the body of the book. Its front face is the page
+        // the cover opens onto — a preview of the case study this sheet
+        // navigates to, so opening it shows you where you are going.
+        // Deliberately NOT drawn here. Six 760x1000 canvases on the
+        // critical path cost ~110ms of blocking time for pages nobody has
+        // opened yet; they are built during idle time below.
+        const pageMat = new THREE.MeshBasicMaterial({
+          color: new THREE.Color(p.tone),
+          transparent: true,
+        });
+
         const mats: import('three').Material[] = [
           side(edgeV, 0xffffff),
           side(edgeV, 0xd8d8d4),
           side(edgeH, 0xffffff),
           side(edgeH, 0xc9c9c5),
-          press.frontMaterial(sep, i),
+          pageMat,
           new THREE.MeshBasicMaterial({ color: new THREE.Color(T.ink), transparent: true }),
         ];
 
         const mesh = new THREE.Mesh(geo, mats);
         mesh.userData.index = i;
-        scene.add(mesh);
+
+        const group = new THREE.Group();
+        group.userData.index = i;
+        group.add(mesh);
+
+        // The COVER, hinged on the front-left edge like a real book. The
+        // press pass prints onto this, and the client's name sits in a
+        // band across its foot.
+        const hinge = new THREE.Object3D();
+        hinge.position.set(-SLAB_W / 2, 0, SLAB_D / 2 + 0.006);
+        group.add(hinge);
+
+        const coverGeo = new THREE.PlaneGeometry(SLAB_W, SLAB_H);
+        const coverFront = new THREE.Mesh(coverGeo, press.frontMaterial(sep, i));
+        coverFront.position.x = SLAB_W / 2;
+        coverFront.userData.index = i;
+        hinge.add(coverFront);
+
+        // The inside of the cover. Plain stock — a book's cover is blank
+        // inside, and without it you would see the artwork mirrored.
+        const coverBack = new THREE.Mesh(
+          coverGeo,
+          new THREE.MeshBasicMaterial({ color: new THREE.Color(T.paper), transparent: true }),
+        );
+        coverBack.position.set(SLAB_W / 2, 0, -0.008);
+        coverBack.rotation.y = Math.PI;
+        coverBack.userData.index = i;
+        hinge.add(coverBack);
+
+        mats.push(coverFront.material as import('three').Material);
+        mats.push(coverBack.material as import('three').Material);
+
+        scene.add(group);
 
         const sh = new THREE.Mesh(
           new THREE.PlaneGeometry(SLAB_W * 2.1, SLAB_W * 1.5),
@@ -214,8 +263,39 @@ export default function PressHero({
         sh.rotation.x = -Math.PI / 2;
         scene.add(sh);
 
-        slabs.push({ mesh, shadow: sh, canvas: c, sep, mats, project: p, printT: i === PRESS_START ? -0.45 : 1 });
+        slabs.push({
+          group, hinge, pageMat, openT: 0, pageBuilt: false, heroImg: null,
+          mesh, shadow: sh, canvas: c, sep, mats, project: p,
+          printT: i === PRESS_START ? -0.45 : 1,
+        });
       });
+
+      /* ---------- inner pages, built off the critical path ---------- */
+      const idle: (cb: () => void) => void =
+        typeof (window as unknown as { requestIdleCallback?: unknown })
+          .requestIdleCallback === 'function'
+          ? (cb) => (window as unknown as {
+              requestIdleCallback: (c: () => void, o?: { timeout: number }) => void
+            }).requestIdleCallback(cb, { timeout: 2500 })
+          : (cb) => window.setTimeout(cb, 240);
+
+      let built = 0;
+      const buildNextPage = () => {
+        if (disposed || built >= slabs.length) return;
+        const i = built++;
+        const s0 = slabs[i];
+        // Skip if the artwork load already supplied a better page.
+        if (!s0.pageBuilt) {
+          const old = s0.pageMat.map;
+          s0.pageMat.map = sheets.caseStudyPageTexture(s0.project, T, PW, PH, s0.heroImg);
+          s0.pageMat.color = new THREE.Color(0xffffff);
+          s0.pageMat.needsUpdate = true;
+          s0.pageBuilt = true;
+          old?.dispose();
+        }
+        idle(buildNextPage);
+      };
+      idle(buildNextPage);
 
       /* ---------- real artwork ---------- */
       PRESS_PROJECTS.forEach((p, i) => {
@@ -229,8 +309,17 @@ export default function PressHero({
           if (disposed) return;
           try {
             sheets.paintArt(slabs[i].canvas, img, PW, PH);
+            sheets.stampCoverTitle(slabs[i].canvas, p, T, PW, PH);
             press.refreshSeparation(slabs[i].sep, slabs[i].canvas, PW, PH);
             slabs[i].printT = 0;
+            // The opened page shows the real case-study hero.
+            slabs[i].heroImg = img;
+            const old = slabs[i].pageMat.map;
+            slabs[i].pageMat.map = sheets.caseStudyPageTexture(p, T, PW, PH, img);
+            slabs[i].pageMat.color = new THREE.Color(0xffffff);
+            slabs[i].pageMat.needsUpdate = true;
+            slabs[i].pageBuilt = true;
+            old?.dispose();
           } catch {
             /* tainted canvas — keep the generated sheet */
           }
@@ -345,7 +434,8 @@ export default function PressHero({
         ndc.x = ((clientX - r.left) / r.width) * 2 - 1;
         ndc.y = -((clientY - r.top) / r.height) * 2 + 1;
         raycaster.setFromCamera(ndc, camera);
-        const hits = raycaster.intersectObjects(slabs.map((s) => s.mesh), false);
+        // recursive: the book is a group of block + two cover faces
+        const hits = raycaster.intersectObjects(slabs.map((s) => s.group), true);
         return hits.length ? (hits[0].object.userData.index as number) : -1;
       }
 
@@ -578,8 +668,13 @@ export default function PressHero({
         // navigation lands on the beat rather than at a fixed delay that is
         // right for exactly one travel distance.
         if (opening) {
-          const arrived = Math.abs(wrapRel(opening.i - pos)) < 0.06 && focus > 0.86;
-          const overdue = performance.now() - opening.at > 1800;  // never strand a press
+          // Wait for the book to be OPEN, not merely arrived — the whole
+          // point is that you see the page before the page loads.
+          const arrived =
+            Math.abs(wrapRel(opening.i - pos)) < 0.06 &&
+            focus > 0.86 &&
+            slabs[opening.i].openT > 0.9;
+          const overdue = performance.now() - opening.at > 3200;  // never strand a press
           if (arrived || overdue) {
             const slug = opening.slug;
             opening = null;
@@ -621,24 +716,37 @@ export default function PressHero({
           const x = rel * spread + (isCentre ? 0 : Math.sign(rel) * focus * 1.4);
           const y = float - my * 0.28 * (1 - focus);
           const z = -Math.abs(rel) * 0.85 + (isCentre ? lerp(0.5, 2.9, focus) : 0);
-          s.mesh.position.set(x, y, z);
+          s.group.position.set(x, y, z);
 
           let yaw = -0.3 + rel * 0.11 + mx * 0.1;
           if (isCentre) yaw = lerp(yaw, 0.02 + mx * 0.05, focus);
-          s.mesh.rotation.y = yaw;
-          s.mesh.rotation.x = (reduced ? 0 : Math.sin(t * 0.4 + i) * 0.015) + my * 0.05 * (1 - focus);
-          s.mesh.rotation.z = rel * 0.012;
+          s.group.rotation.y = yaw;
+          s.group.rotation.x = (reduced ? 0 : Math.sin(t * 0.4 + i) * 0.015) + my * 0.05 * (1 - focus);
+          s.group.rotation.z = rel * 0.012;
 
           const edge = 1 - smooth(N / 2 - 1.25, N / 2 - 0.15, Math.abs(rel));
           const op = (isCentre ? 1 : lerp(1, 0.06, focus)) * edge;
-          for (let m = 0; m < 6; m++) {
-            if (m !== 4) (s.mats[m] as import('three').MeshBasicMaterial).opacity = op;
+          for (let m = 0; m < s.mats.length; m++) {
+            if (m !== 4 && m !== 6) (s.mats[m] as import('three').MeshBasicMaterial).opacity = op;
           }
+          (s.mats[4] as import('three').MeshBasicMaterial).opacity = op;
 
           s.printT = press.advancePrint(s.printT, dt, reduced);
-          const fm = s.mats[4] as import('three').ShaderMaterial;
+          const fm = s.mats[6] as import('three').ShaderMaterial;   // cover front
           fm.uniforms.uProgress.value = s.printT;
           fm.uniforms.uOpacity.value = op;
+
+          // Open the cover only on the book being pressed, and only once
+          // it has reached the centre — a book that opens while still
+          // flying reads as a glitch rather than as a book.
+          const isOpening = !!opening && opening.i === i;
+          const atCentre = Math.abs(rel) < 0.12;
+          const wantOpen = isOpening && atCentre ? 1 : 0;
+          s.openT = lerp(s.openT, wantOpen, wantOpen ? 0.09 : 0.22);
+          // eased, so it swings rather than turning at a constant rate
+          const e2 = s.openT * s.openT * (3 - 2 * s.openT);
+          s.hinge.rotation.y = -e2 * 2.42;          // ~139 degrees
+          s.group.rotation.y += e2 * 0.30;          // turn the spread to face us
 
           s.shadow.position.set(x, -SLAB_H / 2 - 0.45 + y * 0.25, z - 0.1);
           (s.shadow.material as import('three').MeshBasicMaterial).opacity =
@@ -707,6 +815,12 @@ export default function PressHero({
           if (!s.project.art) {
             sheets.drawSheet(s.canvas, s.project, T, PW, PH);
             press.refreshSeparation(s.sep, s.canvas, PW, PH);
+          }
+          if (s.pageBuilt) {
+            const oldPage = s.pageMat.map;
+            s.pageMat.map = sheets.caseStudyPageTexture(s.project, T, PW, PH, s.heroImg);
+            s.pageMat.needsUpdate = true;
+            oldPage?.dispose();
           }
         });
       };

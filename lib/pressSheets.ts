@@ -398,3 +398,144 @@ export const PLAIN_VERT = [
   'varying vec2 vUv;',
   'void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
 ].join('\n');
+
+/**
+ * The client's name on the cover, set in a paper band across the foot.
+ *
+ * A band rather than type laid straight over the artwork: Rich's covers
+ * are his own work and usually already carry type, so a title printed on
+ * top of them fights the thing it is meant to label. A band is how a book
+ * jacket does it anyway.
+ */
+export function stampCoverTitle(
+  c: HTMLCanvasElement,
+  p: PressProject,
+  T: Theme,
+  PW: number,
+  PH: number,
+) {
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return;
+  const S = PW / 760;
+  ctx.setTransform(S, 0, 0, S, 0, 0);
+  const W = 760;
+  const H = 1000;
+
+  const bandTop = H - 208;
+  ctx.fillStyle = T.paper;
+  ctx.fillRect(0, bandTop, W, 208);
+  ctx.fillStyle = T.ink;
+  ctx.globalAlpha = 0.16;
+  ctx.fillRect(0, bandTop, W, 2);
+  ctx.globalAlpha = 1;
+
+  // Client name as large as it will go across the band.
+  let size = 92;
+  const name = p.client.toUpperCase();
+  for (; size > 26; size -= 3) {
+    ctx.font = '800 ' + size + 'px Archivo, Arial';
+    if (ctx.measureText(name).width <= W - 112) break;
+  }
+  ctx.fillStyle = T.ink;
+  ctx.fillText(name, 56, bandTop + 108);
+
+  ctx.font = '500 19px "JetBrains Mono", monospace';
+  ctx.globalAlpha = 0.6;
+  ctx.fillText('®RICH COLVILL', 56, bandTop + 158);
+  ctx.globalAlpha = 1;
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+/**
+ * The page the book opens ONTO: a preview of the case study it is about to
+ * navigate to — the same hero image, title, client and meta, laid out the
+ * way that page actually is. Opening the book shows you where you are going.
+ */
+export function caseStudyPageTexture(
+  p: PressProject,
+  T: Theme,
+  PW: number,
+  PH: number,
+  hero?: HTMLImageElement | null,
+): THREE.CanvasTexture {
+  const c = cv(PW, PH);
+  const ctx = c.getContext('2d')!;
+  const S = PW / 760;
+  ctx.setTransform(S, 0, 0, S, 0, 0);
+  const W = 760;
+  const H = 1000;
+
+  ctx.fillStyle = T.paper;
+  ctx.fillRect(0, 0, W, H);
+  ctx.textBaseline = 'alphabetic';
+
+  // The case-study hero: full-bleed image with the caption over its foot.
+  const heroH = 560;
+  if (hero && hero.naturalWidth) {
+    const scale = Math.max(W / hero.naturalWidth, heroH / hero.naturalHeight);
+    const dw = hero.naturalWidth * scale;
+    const dh = hero.naturalHeight * scale;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, W, heroH);
+    ctx.clip();
+    ctx.drawImage(hero, (W - dw) / 2, (heroH - dh) / 2, dw, dh);
+    ctx.restore();
+  } else {
+    ctx.fillStyle = p.tone;
+    ctx.fillRect(0, 0, W, heroH);
+  }
+
+  // scrim, so the caption reads on any photograph
+  const sc = ctx.createLinearGradient(0, heroH - 300, 0, heroH);
+  sc.addColorStop(0, 'rgba(10,10,10,0)');
+  sc.addColorStop(1, 'rgba(10,10,10,.82)');
+  ctx.fillStyle = sc;
+  ctx.fillRect(0, heroH - 300, W, 300);
+
+  ctx.fillStyle = '#f0f0ef';
+  ctx.font = '500 19px "JetBrains Mono", monospace';
+  ctx.globalAlpha = 0.85;
+  ctx.fillText(p.client.toUpperCase(), 56, heroH - 132);
+  ctx.globalAlpha = 1;
+
+  let ts = 62;
+  let lines: string[] = [];
+  for (; ts > 22; ts -= 3) {
+    ctx.font = '800 ' + ts + 'px Archivo, Arial';
+    lines = [];
+    let line = '';
+    for (const word of p.title.split(/\s+/)) {
+      const t = line ? line + ' ' + word : word;
+      if (ctx.measureText(t).width > W - 112 && line) { lines.push(line); line = word; }
+      else line = t;
+    }
+    if (line) lines.push(line);
+    if (lines.length <= 2) break;
+  }
+  ctx.fillStyle = '#f0f0ef';
+  lines.forEach((l, i) => ctx.fillText(l, 56, heroH - 96 + i * ts * 0.98));
+
+  // The brief, and the plate grid beneath it — the shape of the real page.
+  ctx.fillStyle = T.ink;
+  ctx.globalAlpha = 0.5;
+  ctx.font = '500 18px "JetBrains Mono", monospace';
+  ctx.fillText('BRIEF', 56, heroH + 76);
+  ctx.globalAlpha = 0.28;
+  for (let i = 0; i < 4; i++) ctx.fillRect(56, heroH + 108 + i * 26, W - 112 - (i === 3 ? 220 : 0), 9);
+  ctx.globalAlpha = 0.16;
+  ctx.fillRect(56, heroH + 250, (W - 124) / 2, 118);
+  ctx.fillRect(56 + (W - 124) / 2 + 12, heroH + 250, (W - 124) / 2, 118);
+  ctx.globalAlpha = 1;
+
+  ctx.globalAlpha = 0.5;
+  regMark(ctx, W - 40, H - 40, 11, T.ink);
+  ctx.globalAlpha = 1;
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  grain(ctx, PW, PH, 10);
+  const tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = 4;
+  return tex;
+}

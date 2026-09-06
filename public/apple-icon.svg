@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 112 112" width="112" height="112">
+<!-- Rich's circled-R mark as the site icon, matching how his own favicon
+     sets it: the mark reversed out of near-black. Same traced path as
+     public/rc-mark.svg. -->
+<rect width="112" height="112" rx="18" fill="#0a0a0a"/>
+<g transform="translate(0,112) scale(0.1,-0.1)" fill="#f0f0ef">
+<path d="M422 1090 c-194 -52 -343 -202 -392 -396 -117 -456 353 -833 777 -624 338 167 406 626 130 887 -139 131 -336 182 -515 133z m304 -175 c113 -55 195 -169 212 -294 52 -375 -360 -604 -638 -355 -174 158 -158 471 32 611 112 82 272 97 394 38z M350 555 l0 -295 60 0 59 0 3 118 c3 117 3 117 28 120 22 2 32 -10 94 -118 l68 -120 69 0 c38 0 69 2 69 5 0 2 -31 56 -70 120 -38 64 -70 117 -70 119 0 2 13 6 30 9 16 4 47 22 67 41 36 32 38 37 41 108 4 89 -17 130 -88 166 -40 20 -58 22 -202 22 l-158 0 0 -295z m285 185 c31 -12 46 -48 36 -87 -9 -36 -63 -55 -141 -51 l-55 3 -3 73 -3 72 70 0 c38 0 81 -4 96 -10z"/>
+</g>
+</svg>
