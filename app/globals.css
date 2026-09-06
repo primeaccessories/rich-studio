@@ -1992,6 +1992,51 @@ a {
 .hero-index-link:hover { opacity: 1; }
 .hero-index-num { opacity: 0.6; font-variant-numeric: tabular-nums; }
 
+/* ---------- THE PRESS IS DOWN ----------
+   No WebGL, or the modules never arrived. The stage stops occupying two
+   thirds of the viewport with an invisible canvas, and the index list —
+   the same six projects the rail was carrying, already in the markup —
+   becomes the hero. A visitor with no WebGL still lands on Rich's work,
+   not on a Stop button attached to nothing. */
+:root[data-press='down'] .stage {
+  /* Not zero. The fixed nav takes its colour from the page ground, so
+     collapsing the stage completely would drop the black band straight
+     under it and leave the links ink-on-ink. Keeping a paper margin the
+     depth of the nav is both the fix and the right look — the site's own
+     margin, with the band starting below it. */
+  height: clamp(64px, 9vh, 96px);
+  min-height: 0;
+}
+
+:root[data-press='down'] .hint,
+:root[data-press='down'] .press-pause,
+:root[data-press='down'] .veil {
+  display: none;
+}
+
+:root[data-press='down'] .hero-index {
+  position: static;
+  width: auto;
+  height: auto;
+  clip: auto;
+  overflow: visible;
+  display: block;
+  margin-top: 34px;
+  border-top: 1px solid rgb(255 255 255 / 0.18);
+}
+
+:root[data-press='down'] .hero-index li {
+  border-bottom: 1px solid rgb(255 255 255 / 0.18);
+}
+
+:root[data-press='down'] .hero-index-link {
+  display: flex;
+  gap: 18px;
+  align-items: baseline;
+  padding: 16px 0;
+  opacity: 1;
+}
+
 @media (max-width: 820px) {
   .stage { height: 64svh; min-height: 320px; }
 }
@@ -2209,4 +2254,36 @@ a:focus-visible .roll > span,
 
 @media (prefers-reduced-motion: reduce) {
   .press-gl { transition: none; }
+}
+
+/* ---------- THE PRINTER'S FIST ----------
+   The manicule is a real mark from the print trade — the hand compositors
+   set in the case to point the reader at something. On a site built around
+   a press it is the honest pointer, so it stands in for `cursor: pointer`
+   wherever something can actually be pressed.
+
+   Two declarations, not one: the plain url() is the floor, and the
+   image-set() overrides it where supported so the mark stays crisp on a
+   HiDPI screen. The `pointer` keyword at the end is the required fallback
+   if the image itself fails. Hotspot is the fingertip. */
+a[href],
+button,
+summary,
+label[for],
+[role='tab'],
+[role='button'],
+.stage {
+  cursor: url('/cursor/fist.png') 12 3, pointer;
+  cursor: image-set(
+      url('/cursor/fist.png') 1x,
+      url('/cursor/fist@2x.png') 2x
+    ) 12 3, pointer;
+}
+
+/* Don't point at something that cannot be pressed. .stage.dragging and
+   .stage.focused already carry grabbing / zoom-out and outrank this on
+   specificity, so the rail keeps its own states while it is in use. */
+button:disabled,
+[aria-disabled='true'] {
+  cursor: not-allowed;
 }

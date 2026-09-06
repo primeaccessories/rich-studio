@@ -59,6 +59,37 @@ export default function PressHero({
     // Every teardown the async init might need to register.
     const cleanups: Array<() => void> = [];
 
+    /* ---------- the stage always ends in a defined state ----------
+       The press either comes up or it does not, and both endings are
+       designed. What must never happen is neither: a 64svh band holding
+       an invisible canvas, a hint telling you to drag it and a button
+       offering to stop it. Every failure path below routes through
+       pressDown(), and a backstop timer catches the ones that hang
+       rather than throw — a stalled import, a device that never returns
+       a context. */
+    let settled = false;
+    function pressLive() {
+      if (settled || disposed) return;
+      settled = true;
+      window.clearTimeout(backstop);
+      canvas!.classList.add('is-ready');
+      document.documentElement.dataset.press = 'live';
+    }
+    function pressDown() {
+      if (settled || disposed) return;
+      settled = true;
+      window.clearTimeout(backstop);
+      canvas!.style.display = 'none';
+      // Hands the hero to .hero-index — the same six links the rail was
+      // carrying, already in the markup and already correct.
+      document.documentElement.dataset.press = 'down';
+    }
+    const backstop = window.setTimeout(pressDown, 6000);
+    cleanups.push(() => {
+      window.clearTimeout(backstop);
+      delete document.documentElement.dataset.press;
+    });
+
     (async () => {
       let THREE: typeof import('three');
       let press: typeof import('@/lib/press');
@@ -74,7 +105,7 @@ export default function PressHero({
           import('gsap/ScrollTrigger'),
         ]);
       } catch {
-        canvas.style.display = 'none';
+        pressDown();
         return;
       }
       if (disposed) return;
@@ -116,13 +147,13 @@ export default function PressHero({
           return !!(t.getContext('webgl2') || t.getContext('webgl'));
         } catch { return false; }
       })();
-      if (!supported) { canvas.style.display = 'none'; return; }
+      if (!supported) { pressDown(); return; }
 
       let renderer: import('three').WebGLRenderer;
       try {
         renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
       } catch {
-        canvas.style.display = 'none';
+        pressDown();
         return;
       }
       // Narrow screens are the ones most likely to be fill-rate bound.
@@ -178,7 +209,8 @@ export default function PressHero({
       interface Slab {
         group: import('three').Group;
         hinge: import('three').Object3D;
-        pageMat: import('three').MeshBasicMaterial;
+        pageMat: import('three').MeshBasicMaterial;   // recto — the block's face
+        pageMatL: import('three').MeshBasicMaterial;  // verso — the cover's inside
         pageBuilt: boolean;
         heroImg: HTMLImageElement | null;
         openT: number;
@@ -240,12 +272,14 @@ export default function PressHero({
         coverFront.userData.index = i;
         hinge.add(coverFront);
 
-        // The inside of the cover. Plain stock — a book's cover is blank
-        // inside, and without it you would see the artwork mirrored.
-        const coverBack = new THREE.Mesh(
-          coverGeo,
-          new THREE.MeshBasicMaterial({ color: new THREE.Color(T.paper), transparent: true }),
-        );
+        // The inside of the cover — the VERSO. It carries the left half of
+        // the spread. Plain stock until the page is built, so the book is
+        // never caught holding a blank leaf next to a printed one.
+        const pageMatL = new THREE.MeshBasicMaterial({
+          color: new THREE.Color(T.paper),
+          transparent: true,
+        });
+        const coverBack = new THREE.Mesh(coverGeo, pageMatL);
         coverBack.position.set(SLAB_W / 2, 0, -0.008);
         coverBack.rotation.y = Math.PI;
         coverBack.userData.index = i;
@@ -264,7 +298,7 @@ export default function PressHero({
         scene.add(sh);
 
         slabs.push({
-          group, hinge, pageMat, openT: 0, pageBuilt: false, heroImg: null,
+          group, hinge, pageMat, pageMatL, openT: 0, pageBuilt: false, heroImg: null,
           mesh, shadow: sh, canvas: c, sep, mats, project: p,
           // Fully printed from the first frame. Running the press pass on
           // load meant landing on a halftone dot field that resolved while
@@ -283,6 +317,39 @@ export default function PressHero({
             }).requestIdleCallback(cb, { timeout: 2500 })
           : (cb) => window.setTimeout(cb, 240);
 
+      /* ---------- one spread, two leaves ----------
+         The destination page is drawn once, at double width, and the two
+         halves are addressed with UV offsets rather than redrawn. The
+         verso samples the left half through a flipped V, because its plane
+         is turned through pi to face out of the open cover: the geometry
+         already mirrors it, and correcting only U would leave the leaf
+         upside down. Derived by opening the book and looking at it, which
+         is the only way to settle a UV convention. */
+      function dressSpread(s: Slab, spread: import('three').CanvasTexture) {
+        const oldR = s.pageMat.map;
+        const oldL = s.pageMatL.map;
+
+        spread.wrapS = spread.wrapT = THREE.ClampToEdgeWrapping;
+        const verso = spread.clone();
+
+        spread.repeat.set(0.5, 1);
+        spread.offset.set(0.5, 0);   // recto: the right half
+        verso.repeat.set(0.5, 1);
+        verso.offset.set(0, 0);      // verso: the left half
+        verso.needsUpdate = true;
+
+        s.pageMat.map = spread;
+        s.pageMat.color = new THREE.Color(0xffffff);
+        s.pageMat.needsUpdate = true;
+
+        s.pageMatL.map = verso;
+        s.pageMatL.color = new THREE.Color(0xffffff);
+        s.pageMatL.needsUpdate = true;
+
+        oldR?.dispose();
+        oldL?.dispose();
+      }
+
       let built = 0;
       const buildNextPage = () => {
         if (disposed || built >= slabs.length) return;
@@ -290,12 +357,8 @@ export default function PressHero({
         const s0 = slabs[i];
         // Skip if the artwork load already supplied a better page.
         if (!s0.pageBuilt) {
-          const old = s0.pageMat.map;
-          s0.pageMat.map = sheets.caseStudyPageTexture(s0.project, T, PW, PH, s0.heroImg);
-          s0.pageMat.color = new THREE.Color(0xffffff);
-          s0.pageMat.needsUpdate = true;
+          dressSpread(s0, sheets.caseStudySpreadTexture(s0.project, T, PW, PH, s0.heroImg));
           s0.pageBuilt = true;
-          old?.dispose();
         }
         idle(buildNextPage);
       };
@@ -307,11 +370,8 @@ export default function PressHero({
          artwork one by one, which is most of what read as "glitchy". */
       const artTotal = PRESS_PROJECTS.filter((x) => x.art).length;
       let artLoaded = 0;
-      let revealed = false;
       function reveal() {
-        if (revealed || disposed) return;
-        revealed = true;
-        canvas!.classList.add('is-ready');
+        pressLive();
       }
       // Never hold the hero hostage to a slow or failed image.
       const revealTimer = window.setTimeout(reveal, 2600);
@@ -327,12 +387,8 @@ export default function PressHero({
           if (disposed) return;
           slabs[i].heroImg = hi;
           try {
-            const old = slabs[i].pageMat.map;
-            slabs[i].pageMat.map = sheets.caseStudyPageTexture(p, T, PW, PH, hi);
-            slabs[i].pageMat.color = new THREE.Color(0xffffff);
-            slabs[i].pageMat.needsUpdate = true;
+            dressSpread(slabs[i], sheets.caseStudySpreadTexture(p, T, PW, PH, hi));
             slabs[i].pageBuilt = true;
-            old?.dispose();
           } catch { /* keep whatever page is already there */ }
         };
         hi.src = p.hero;
@@ -983,10 +1039,10 @@ export default function PressHero({
             press.refreshSeparation(s.sep, s.canvas, PW, PH);
           }
           if (s.pageBuilt) {
-            const oldPage = s.pageMat.map;
-            s.pageMat.map = sheets.caseStudyPageTexture(s.project, T, PW, PH, s.heroImg);
-            s.pageMat.needsUpdate = true;
-            oldPage?.dispose();
+            dressSpread(s, sheets.caseStudySpreadTexture(s.project, T, PW, PH, s.heroImg));
+          } else {
+            s.pageMatL.color = new THREE.Color(T.paper);
+            s.pageMatL.needsUpdate = true;
           }
         });
       };

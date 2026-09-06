@@ -450,53 +450,66 @@ export function stampCoverTitle(
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
+
 /**
- * The page the book opens ONTO: a preview of the case study it is about to
- * navigate to — the same hero image, title, client and meta, laid out the
- * way that page actually is. Opening the book shows you where you are going.
+ * THE SPREAD
+ *
+ * What is inside the book when it opens. The destination page is laid
+ * across BOTH leaves as one continuous spread — hero bleeding over the
+ * fold, caption on the verso, the rest of the layout on the recto —
+ * rather than the same page printed twice, which is what a duplicated
+ * texture looks like and reads as a mistake.
+ *
+ * Drawn at 2:1 of a single leaf. The caller splits it with UV offsets, so
+ * the halves can never drift apart: they are literally the same canvas.
+ *
+ * Nothing that must be read is placed near the gutter — a real spread
+ * keeps text clear of the fold, and here the fold has a shadow across it.
  */
-export function caseStudyPageTexture(
+export function caseStudySpreadTexture(
   p: PressProject,
   T: Theme,
   PW: number,
   PH: number,
   hero?: HTMLImageElement | null,
 ): THREE.CanvasTexture {
-  const c = cv(PW, PH);
+  const c = cv(PW * 2, PH);
   const ctx = c.getContext('2d')!;
   const S = PW / 760;
   ctx.setTransform(S, 0, 0, S, 0, 0);
-  const W = 760;
+  const W = 760;            // one leaf
+  const SW = W * 2;         // the spread
   const H = 1000;
 
   ctx.fillStyle = T.paper;
-  ctx.fillRect(0, 0, W, H);
+  ctx.fillRect(0, 0, SW, H);
   ctx.textBaseline = 'alphabetic';
 
-  // The case-study hero: full-bleed image with the caption over its foot.
+  /* The hero, bleeding across the whole spread. */
   const heroH = 560;
   if (hero && hero.naturalWidth) {
-    const scale = Math.max(W / hero.naturalWidth, heroH / hero.naturalHeight);
+    const scale = Math.max(SW / hero.naturalWidth, heroH / hero.naturalHeight);
     const dw = hero.naturalWidth * scale;
     const dh = hero.naturalHeight * scale;
     ctx.save();
     ctx.beginPath();
-    ctx.rect(0, 0, W, heroH);
+    ctx.rect(0, 0, SW, heroH);
     ctx.clip();
-    ctx.drawImage(hero, (W - dw) / 2, (heroH - dh) / 2, dw, dh);
+    ctx.drawImage(hero, (SW - dw) / 2, (heroH - dh) / 2, dw, dh);
     ctx.restore();
   } else {
     ctx.fillStyle = p.tone;
-    ctx.fillRect(0, 0, W, heroH);
+    ctx.fillRect(0, 0, SW, heroH);
   }
 
-  // scrim, so the caption reads on any photograph
   const sc = ctx.createLinearGradient(0, heroH - 300, 0, heroH);
   sc.addColorStop(0, 'rgba(10,10,10,0)');
   sc.addColorStop(1, 'rgba(10,10,10,.82)');
   ctx.fillStyle = sc;
-  ctx.fillRect(0, heroH - 300, W, 300);
+  ctx.fillRect(0, heroH - 300, SW, 300);
 
+  /* Caption on the verso, wrapped inside one leaf so it never crosses
+     the fold. */
   ctx.fillStyle = '#f0f0ef';
   ctx.font = '500 19px "JetBrains Mono", monospace';
   ctx.globalAlpha = 0.85;
@@ -520,24 +533,45 @@ export function caseStudyPageTexture(
   ctx.fillStyle = '#f0f0ef';
   lines.forEach((l, i) => ctx.fillText(l, 56, heroH - 96 + i * ts * 0.98));
 
-  // The brief, and the plate grid beneath it — the shape of the real page.
+  /* Verso: the brief. Recto: the plates. */
   ctx.fillStyle = T.ink;
   ctx.globalAlpha = 0.5;
   ctx.font = '500 18px "JetBrains Mono", monospace';
   ctx.fillText('BRIEF', 56, heroH + 76);
+  ctx.fillText('PLATES', W + 56, heroH + 76);
   ctx.globalAlpha = 0.28;
-  for (let i = 0; i < 4; i++) ctx.fillRect(56, heroH + 108 + i * 26, W - 112 - (i === 3 ? 220 : 0), 9);
+  for (let i = 0; i < 5; i++) {
+    ctx.fillRect(56, heroH + 108 + i * 26, W - 112 - (i === 4 ? 240 : 0), 9);
+  }
   ctx.globalAlpha = 0.16;
-  ctx.fillRect(56, heroH + 250, (W - 124) / 2, 118);
-  ctx.fillRect(56 + (W - 124) / 2 + 12, heroH + 250, (W - 124) / 2, 118);
+  const bw = (W - 124) / 2;
+  ctx.fillRect(W + 56, heroH + 108, bw, 150);
+  ctx.fillRect(W + 56 + bw + 12, heroH + 108, bw, 150);
+  ctx.fillRect(W + 56, heroH + 270, W - 112, 96);
   ctx.globalAlpha = 1;
 
-  ctx.globalAlpha = 0.5;
-  regMark(ctx, W - 40, H - 40, 11, T.ink);
+  /* The fold. A real spread is never flat across the gutter. */
+  const g = ctx.createLinearGradient(W - 54, 0, W + 54, 0);
+  g.addColorStop(0, 'rgba(10,10,10,0)');
+  g.addColorStop(0.42, 'rgba(10,10,10,.22)');
+  g.addColorStop(0.5, 'rgba(10,10,10,.34)');
+  g.addColorStop(0.58, 'rgba(10,10,10,.22)');
+  g.addColorStop(1, 'rgba(10,10,10,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(W - 54, 0, 108, H);
+
+  /* Folios, and the register mark on the recto. */
+  ctx.fillStyle = T.ink;
+  ctx.globalAlpha = 0.45;
+  ctx.font = '500 16px "JetBrains Mono", monospace';
+  ctx.fillText('® RICH COLVILL', 56, H - 44);
+  const folio = p.slug.toUpperCase();
+  ctx.fillText(folio, SW - 56 - ctx.measureText(folio).width, H - 44);
+  regMark(ctx, SW - 40, 40, 11, T.ink);
   ctx.globalAlpha = 1;
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  grain(ctx, PW, PH, 10);
+  grain(ctx, PW * 2, PH, 10);
   const tex = new THREE.CanvasTexture(c);
   tex.anisotropy = 4;
   return tex;
