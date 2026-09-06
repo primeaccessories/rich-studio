@@ -2,6 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { PressProject, Theme } from '@/lib/pressSheets';
+/* Written by scripts/capture-spreads.mjs. The filenames carry a content
+   hash, so the rail cannot guess them — and that is the point: at a stable
+   name Cloudflare kept serving a stale capture from its edge after a
+   successful deploy, with no way to purge a pages.dev alias. */
+import SPREADS from '@/content/spreads.json';
 
 /**
  * THE PRESS HERO
@@ -20,13 +25,18 @@ import type { PressProject, Theme } from '@/lib/pressSheets';
  */
 
 export const PRESS_PROJECTS: PressProject[] = [
-  { slug: 'silverstone', title: 'REBRAND FOR SILVERSTONE RACECOURSE', client: 'SILVERSTONE',  tone: '#223549', kind: 4, words: ['HOME OF', 'RACING'],          art: '/press/silverstone.webp', hero: '/work/silverstone/00.webp', page: '/press/spread/silverstone.webp' },
-  { slug: 'hellmanns',   title: "HELLMANN'S AD CAMPAIGN",             client: "HELLMANN'S",   tone: '#c6a675', kind: 3, words: ['REAL', 'FOOD'],              art: '/press/hellmanns.webp', hero: '/work/hellmanns/00.webp', page: '/press/spread/hellmanns.webp' },
-  { slug: 'walls',       title: "WALL'S MAKES IT HAPPIER",            client: "WALL'S",       tone: '#e1251a', kind: 0, words: ['TASTE', 'HAPPIER', 'TODAY'], art: '/press/walls.webp', hero: '/work/walls/00.webp', page: '/press/spread/walls.webp' },
-  { slug: 'absolut',     title: 'ABSOLUT HALLOWEEN',                  client: 'ABSOLUT',      tone: '#d66511', kind: 1, words: ['ABSOLUT'],                   art: '/press/absolut.webp', hero: '/work/absolut/00.webp', page: '/press/spread/absolut.webp' },
-  { slug: 'networkrail', title: 'CREATIVE RETOUCH FOR NETWORK RAIL',  client: 'NETWORK RAIL', tone: '#533123', kind: 5, words: ['EVERY', 'JOURNEY'],          art: '/press/networkrail.webp', hero: '/work/networkrail/00.webp', page: '/press/spread/networkrail.webp' },
-  { slug: 'strongbow',   title: 'AD CAMPAIGN FOR STRONGBOW',          client: 'STRONGBOW',    tone: '#592e62', kind: 2, words: ['CRISP', 'GOLD'],             art: '/press/strongbow.webp', hero: '/work/strongbow/00.webp', page: '/press/spread/strongbow.webp' },
+  { slug: 'silverstone', title: 'REBRAND FOR SILVERSTONE RACECOURSE', client: 'SILVERSTONE',  tone: '#223549', kind: 4, words: ['HOME OF', 'RACING'],          art: '/press/silverstone.webp', hero: '/work/silverstone/00.webp' },
+  { slug: 'hellmanns',   title: "HELLMANN'S AD CAMPAIGN",             client: "HELLMANN'S",   tone: '#c6a675', kind: 3, words: ['REAL', 'FOOD'],              art: '/press/hellmanns.webp', hero: '/work/hellmanns/00.webp' },
+  { slug: 'walls',       title: "WALL'S MAKES IT HAPPIER",            client: "WALL'S",       tone: '#e1251a', kind: 0, words: ['TASTE', 'HAPPIER', 'TODAY'], art: '/press/walls.webp', hero: '/work/walls/00.webp' },
+  { slug: 'absolut',     title: 'ABSOLUT HALLOWEEN',                  client: 'ABSOLUT',      tone: '#d66511', kind: 1, words: ['ABSOLUT'],                   art: '/press/absolut.webp', hero: '/work/absolut/00.webp' },
+  { slug: 'networkrail', title: 'CREATIVE RETOUCH FOR NETWORK RAIL',  client: 'NETWORK RAIL', tone: '#533123', kind: 5, words: ['EVERY', 'JOURNEY'],          art: '/press/networkrail.webp', hero: '/work/networkrail/00.webp' },
+  { slug: 'strongbow',   title: 'AD CAMPAIGN FOR STRONGBOW',          client: 'STRONGBOW',    tone: '#592e62', kind: 2, words: ['CRISP', 'GOLD'],             art: '/press/strongbow.webp', hero: '/work/strongbow/00.webp' },
 ];
+
+/* Attach each capture from the manifest rather than naming it inline. */
+for (const p of PRESS_PROJECTS) {
+  p.page = (SPREADS as Record<string, string>)[p.slug];
+}
 
 const N = PRESS_PROJECTS.length;
 export const PRESS_START = Math.floor((N - 1) / 2);

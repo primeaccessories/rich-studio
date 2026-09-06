@@ -21,7 +21,10 @@
  */
 import { chromium } from 'playwright';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import {
+  mkdtempSync, rmSync, readFileSync, writeFileSync, readdirSync, unlinkSync,
+} from 'node:fs';
+import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -38,6 +41,7 @@ const W = 1520;
 const H = 1000;
 
 const tmp = mkdtempSync(join(tmpdir(), 'spreads-'));
+const manifest = {};
 
 try {
   const browser = await chromium.launch({
@@ -71,15 +75,37 @@ try {
     // ~80KB each. Six of them load through idle time after the rail is
     // up, so this is weight the hero never waits on — but it is still
     // half a megabyte, which is why it is not full size.
+    const tmpWebp = join(tmp, `${slug}.webp`);
     execFileSync('convert', [
       shot, '-resize', '1216x800', '-strip',
       '-quality', '76', '-define', 'webp:method=6',
-      `${OUT}/${slug}.webp`,
+      tmpWebp,
     ]);
-    console.log('captured', slug);
+
+    /* Content-hashed filename, and this is load-bearing rather than tidy.
+       At a stable name Cloudflare Pages kept serving the OLD capture from
+       its edge long after a successful deploy — the deployment's own URL
+       had the new bytes, the production alias did not, and there is no
+       purge for a pages.dev alias. A new filename cannot be stale. */
+    const bytes = readFileSync(tmpWebp);
+    const hash = createHash('sha1').update(bytes).digest('hex').slice(0, 8);
+    const name = `${slug}-${hash}.webp`;
+
+    for (const old of readdirSync(OUT)) {
+      if (old.startsWith(`${slug}-`) || old === `${slug}.webp`) {
+        unlinkSync(join(OUT, old));
+      }
+    }
+    writeFileSync(join(OUT, name), bytes);
+    manifest[slug] = `/press/spread/${name}`;
+    console.log('captured', slug, '->', name);
   }
 
   await browser.close();
+
+  // The rail reads this rather than guessing at filenames it cannot know.
+  writeFileSync('content/spreads.json', JSON.stringify(manifest, null, 2) + '\n');
+  console.log('wrote content/spreads.json');
 } finally {
   rmSync(tmp, { recursive: true, force: true });
 }
