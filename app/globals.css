@@ -743,13 +743,22 @@ a {
 
 .hold-copy { margin: 0 0 clamp(18px, 3vh, 36px); max-width: 22ch; }
 
-/* Each split line registers independently. */
-.hold-line {
-  --lp: 1;
-  display: block;
-  opacity: calc(0.12 + 0.88 * var(--lp));
-  transform: translate3d(calc((1 - var(--lp)) * -0.18em), 0, 0);
-  will-change: transform, opacity;
+/* The lines only carry the wrapping now; the words carry the animation. */
+.hold-line { display: block; }
+
+/* THE DRAW
+   Each word is wiped in from its own baseline as the hold scrubs. A clip
+   rather than a fade: --wp 0 paints nothing, --wp 1 paints the whole word,
+   and there is no halfway state where the ink sits below contrast — which
+   is what the line-by-line opacity version kept failing on.
+
+   inset() insets from the TOP, so shrinking the top inset grows the word
+   upward off its baseline. */
+.hold-word {
+  --wp: 1;
+  display: inline-block;
+  clip-path: inset(calc((1 - var(--wp)) * 100%) 0 0 0);
+  will-change: clip-path;
 }
 
 .hold-body { opacity: 0.62; max-width: 62ch; }
@@ -771,7 +780,7 @@ a {
   .wm-plate { transform: none !important; }
   .wm-k { opacity: 1 !important; }
   .feature-line { animation: none !important; }
-  .hold-line { --lp: 1 !important; transform: none !important; opacity: 1 !important; }
+  .hold-word { --wp: 1 !important; clip-path: none !important; }
 }
 
 /* ---------- NAV ---------- */
@@ -1169,10 +1178,6 @@ a {
    under even that. These stay quiet, just not invisible. */
 .footer-shout { opacity: 0.5; }
 .clients-item { opacity: 0.5; }
-
-/* The statement's resting state was 0.12 and unreadable before its line
-   animated in. It still visibly registers, from a legible floor. */
-.hold-line { opacity: calc(0.45 + 0.55 * var(--lp)); }
 
 /* The wordmark composited to #929597 = 2.64:1 against paper. The black
    key plate now carries more weight at rest, so it reads as ink even
@@ -1595,16 +1600,8 @@ a {
   text-align: center;
 }
 
-/* The reveal slid in from the left, which reads as broken on centred
-   text — the lines appeared to hang off their own axis. Vertical keeps
-   every line on the centre line for the whole tween. */
-.hold-line {
-  transform: translate3d(0, calc((1 - var(--lp)) * 0.24em), 0);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hold-line { transform: none !important; }
-}
+/* The words are clipped, not moved: on centred text a translate made each
+   line look like it was hanging off its own axis. */
 
 /* The statement is 14 lines. At the shared .t-statement size that is
    ~823px of type, which overflowed a 900px viewport — the label collided
