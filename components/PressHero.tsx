@@ -691,13 +691,31 @@ export default function PressHero({
         stage!.classList.remove('dragging');
         if (moved < 7) {
           const hit = pickIndex(e.clientX, e.clientY);
-          // A press inside the stage ALWAYS opens something. The rail is
-          // drifting, so an exact hit-test occasionally lands between two
-          // books and the press is silently ignored — which reads as the
-          // site being broken. Falling back to whatever is centred is both
-          // predictable and what the visitor almost certainly meant.
-          const i =
-            typeof hit === 'number' && hit >= 0 ? hit : wrapIndex(pos);
+          /* A near miss opens the centre book; anything else opens
+             nothing.
+
+             The rail drifts, so an exact raycast lands between two books
+             often enough that presses were being swallowed — which is why
+             any press inside the stage used to open whatever was centred.
+             But the stage runs the full height of the screen, under the
+             header included, so that turned the whole hero into one big
+             button: pressing the empty space beside the header opened a
+             book. Now the fallback only applies within the centre book's
+             own footprint, generously padded. */
+          let i = typeof hit === 'number' && hit >= 0 ? hit : -1;
+          if (i < 0) {
+            const centre = wrapIndex(pos);
+            const rect = centre >= 0 ? pageScreenRect(centre) : null;
+            if (rect) {
+              const pad = 48;
+              const inside =
+                e.clientX >= rect.left - pad &&
+                e.clientX <= rect.left + rect.width + pad &&
+                e.clientY >= rect.top - pad &&
+                e.clientY <= rect.top + rect.height + pad;
+              if (inside) i = centre;
+            }
+          }
           if (i >= 0 && !opening) {
             // One press does the lot: the sheet flies to centre, opens,
             // and hands over to its case study. Rebased on pos, which is
@@ -879,15 +897,35 @@ export default function PressHero({
         cleanups.push(() => { if (slabs[i]) slabs[i].group.visible = true; });
 
         const s0 = r.width / vw;
-        gsap.fromTo(el, {
-          x: r.left,
-          y: r.top + (r.height - vh * s0) / 2,   // centred on the book
-          scale: s0,
-        }, {
-          x: 0, y: 0, scale: 1,
-          duration: 0.86,
-          ease: 'expo.inOut',
-          onComplete: () => {
+        const y0 = r.top + (r.height - vh * s0) / 2;   // centred on the book
+
+        /* The zoom runs on the Web Animations API rather than GSAP, and
+           the reason is sharpness.
+
+           A tween sets transform as an inline style every frame, so the
+           browser only ever knows the CURRENT scale: it rasterises the
+           layer at the small scale this starts at and keeps that raster
+           until the animation settles, which is the "weird and blurry,
+           then suddenly crisp" of it. Handed the whole keyframe list up
+           front, Chrome can see the animation reaches scale 1 and
+           rasterises for that from the outset.
+
+           cubic-bezier(0.87, 0, 0.13, 1) is expo.inOut, which is what
+           this was tweened with before. */
+        const zoom = el.animate(
+          [
+            { transform: `translate(${r.left}px, ${y0}px) scale(${s0})` },
+            { transform: 'translate(0px, 0px) scale(1)' },
+          ],
+          {
+            duration: 860,
+            easing: 'cubic-bezier(0.87, 0, 0.13, 1)',
+            fill: 'forwards',
+          },
+        );
+        cleanups.push(() => zoom.cancel());
+
+        const onZoomDone = () => {
             /* Tell the case study it is being arrived AT, not loaded.
 
                Its hero runs the press pass on mount, which is right for
@@ -930,8 +968,8 @@ export default function PressHero({
                 });
               }, 260);
             }));
-          },
-        });
+        };
+        zoom.onfinish = onZoomDone;
         // Never strand the overlay if the timeline is interrupted.
         window.setTimeout(() => {
           if (cineEl === el && document.body.contains(el)) {

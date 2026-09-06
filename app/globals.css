@@ -2390,12 +2390,21 @@ button:disabled,
   border: 0;
   padding: 2px 0;
   color: var(--ink-22);
+  /* The DISPLAY face, not the wordmark one. --font-wordmark is
+     HelveticaCondensed and only ships a Regular weight, and body sets
+     font-synthesis-weight: none, so asking it for bold got nothing: the
+     category names came out light while every other heading on the site
+     is 800. Archivo is variable and actually has the weight. */
+  font-family: var(--font-display, sans-serif);
+  font-weight: 800;
+  font-stretch: 88%;
+
   /* Big, but it has to hold PROFESSIONAL SERVICES — 21 characters — and
      clear a 260px sheet on each side. Sized in cqw off this section's own
      content box, NOT vw (which ignores the scrollbar) and NOT a percentage
      (which in font-size resolves against the parent's font size, not its
      width — that silently pinned every name to the 24px floor). */
-  font-size: clamp(22px, 5.6cqw, 76px);
+  font-size: clamp(20px, 4.85cqw, 66px);
   line-height: 1.04;
   letter-spacing: -0.01em;
   transition: color 260ms var(--ease-out);
@@ -2544,3 +2553,52 @@ button:disabled,
   outline: 2px solid var(--ink);
   outline-offset: 4px;
 }
+
+/* ---------- /contact ---------- */
+.contact-page {
+  display: grid;
+  gap: clamp(28px, 5vh, 64px);
+  padding-block: clamp(24px, 5vh, 60px) clamp(48px, 9vh, 110px);
+}
+
+.contact-primary { display: flex; flex-direction: column; gap: 10px; }
+
+.contact-role { opacity: 0.45; }
+
+.contact-address {
+  font-family: var(--font-display, sans-serif);
+  font-weight: 800;
+  font-stretch: 88%;
+  font-size: clamp(1.3rem, 4vw, 3.2rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  border-bottom: var(--rule) solid transparent;
+  align-self: flex-start;
+}
+
+.contact-address:hover,
+.contact-address:focus-visible { border-bottom-color: currentColor; }
+
+.contact-hours { opacity: 0.55; }
+
+.contact-desks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: clamp(18px, 3vw, 40px);
+  border-top: var(--rule) solid var(--ink-22);
+  padding-top: clamp(18px, 3vh, 34px);
+}
+
+.contact-desks li { display: flex; flex-direction: column; gap: 6px; }
+
+.contact-desk {
+  border-bottom: var(--rule) solid transparent;
+  align-self: flex-start;
+  min-height: 32px;
+}
+
+.contact-desk:hover,
+.contact-desk:focus-visible { border-bottom-color: currentColor; }

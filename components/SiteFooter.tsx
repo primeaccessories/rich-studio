@@ -1,12 +1,7 @@
 import Link from 'next/link';
 
-/* Every address and hour here is verbatim from richcolvill.com. An earlier
-   build invented hello@richcolvill.com, which does not exist. */
-const DESKS = [
-  { role: 'COLLABORATIONS', email: 'RICH@RICHCOLVILL.COM' },
-  { role: 'ENQUIRIES', email: 'TARA@RICHCOLVILL.COM' },
-  { role: 'BUSINESS', email: 'CHRIS@RICHCOLVILL.COM' },
-];
+/* One copy of the real details, shared with /contact — see lib/contact. */
+import { DESKS, STUDIO_EMAIL } from '@/lib/contact';
 
 /**
  * THE FOOT
@@ -19,15 +14,21 @@ const DESKS = [
  * The id stays on this element: the nav points at /#contact and that has
  * to keep landing somewhere real.
  */
-export default function SiteFooter() {
+export default function SiteFooter({
+  /* /contact says all of this above the fold in full size. Repeating it
+     immediately underneath reads as a mistake, so that page asks for the
+     sign-off only. */
+  contact = true,
+}: { contact?: boolean } = {}) {
   const year = new Date().getFullYear().toString().slice(-2);
 
   return (
     <footer className="site-footer sheet" id="contact">
+      {contact ? (
       <div className="footer-contact" data-reveal="stagger">
         <div className="footer-col">
           <h2 className="t-mono footer-h">GET &#174;RICH QUICK.</h2>
-          <a className="footer-email" href="mailto:letsdothis@richcolvill.com">
+          <a className="footer-email" href={`mailto:${STUDIO_EMAIL}`}>
             LETSDOTHIS@RICHCOLVILL.COM
           </a>
           <span className="t-mono footer-note">
@@ -50,6 +51,7 @@ export default function SiteFooter() {
           SEE ALL WORK &#8594;
         </Link>
       </div>
+      ) : null}
 
       <div className="footer-rule" aria-hidden="true" />
 
