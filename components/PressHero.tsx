@@ -69,7 +69,6 @@ export default function PressHero({
   const stageRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const veilRef = useRef<HTMLDivElement>(null);
-  const hintRef = useRef<HTMLParagraphElement>(null);
   const [paused, setPaused] = useState(false);
   // The loop reads a ref so toggling never re-runs the whole init effect.
   const pausedRef = useRef(false);
@@ -795,7 +794,6 @@ export default function PressHero({
         onUpdate: (self) => {
           scrollT = self.progress;
           if (veilRef.current) veilRef.current.style.opacity = (scrollT * scrollT * 0.82).toFixed(3);
-          if (hintRef.current) hintRef.current.style.opacity = String(Math.max(0, 1 - scrollT * 1.6));
         },
       });
       cleanups.push(() => st.kill(true));
@@ -955,11 +953,6 @@ export default function PressHero({
         // computed from scratch every frame rather than forced to 0 once,
         // so cancelling with Escape brings the hint back rather than
         // leaving it hidden for good.
-        if (hintRef.current) {
-          hintRef.current.style.opacity =
-            opening ? '0' : String(Math.max(0, 1 - scrollT * 1.6));
-        }
-
         if (opening) {
           // Wait for the book to be OPEN, not merely arrived — the whole
           // point is that you see the page before the page loads.
@@ -1163,16 +1156,21 @@ export default function PressHero({
     <div className="pin-host">
       <section className="stage" ref={stageRef} aria-label="Selected work">
         <canvas className="press-gl" ref={canvasRef} />
-        <p className="hint t-mono" ref={hintRef}>
-          <b>DRAG</b> OR SCROLL TO SPEED THE PRESS · PRESS A SHEET TO OPEN IT
-        </p>
 
-        {/* WCAG 2.2.2 Pause, Stop, Hide (Level A): the rail starts on its
-            own, runs for well over five seconds and sits alongside other
-            content, so it needs a stop that is not just an OS setting. */}
+        {/* The instruction line is gone at the client's request — the rail
+            reads as pressable without being told.
+
+            The stop is NOT gone, it is only invisible until focused. WCAG
+            2.2.2 Pause, Stop, Hide is a Level A requirement and this rail
+            starts on its own, runs far longer than five seconds and sits
+            alongside text; respecting prefers-reduced-motion is not on its
+            own a sufficient technique, the content has to carry a
+            mechanism. Hidden the way a skip link is hidden, it costs the
+            design nothing and keeps the page conformant: tab to it and it
+            appears. */}
         <button
           type="button"
-          className="press-pause t-mono"
+          className="press-pause t-mono is-quiet"
           aria-pressed={paused}
           onClick={() => {
             const next = !pausedRef.current;

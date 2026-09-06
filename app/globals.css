@@ -1933,16 +1933,7 @@ a {
   opacity: 0;
 }
 
-.hint {
-  position: absolute;
-  left: var(--margin);
-  bottom: 20px;
-  z-index: 3;
-  color: var(--ink-45);
-  pointer-events: none;
-}
 
-.hint b { font-weight: 700; color: var(--ink); }
 
 /* ---------- the ink band under the stage ---------- */
 
@@ -2011,7 +2002,6 @@ a {
   min-height: 0;
 }
 
-:root[data-press='down'] .hint,
 :root[data-press='down'] .press-pause,
 :root[data-press='down'] .veil {
   display: none;
@@ -2044,12 +2034,6 @@ a {
   .stage { height: 64svh; min-height: 320px; }
 }
 
-/* Reduced motion: the press pass fast-forwards and the rail stops
-   floating (handled in the component); the hint is not needed. */
-@media (prefers-reduced-motion: reduce) {
-  .hint { display: none; }
-}
-
 /* Studio info lives in the band, not in fixed chrome. As a fixed block it
    sat on the strap's descenders at rest, because the band now begins at
    74svh instead of filling the viewport. */
@@ -2070,10 +2054,28 @@ a {
 }
 
 /* The hint sat at --ink-45 on paper, which fails AA. */
-.hint { color: var(--ink-70); }
 
-/* Stop/run control for the rail — WCAG 2.2.2. Sits opposite the hint on
-   the same baseline, in the same mono as the rest of the furniture. */
+/* Stop/run control for the rail — WCAG 2.2.2.
+
+   Hidden the way a skip link is hidden: taken out of the design at the
+   client's request, but still in the page and still reachable. The rail
+   auto-animates for far longer than five seconds, so Level A requires the
+   content itself to carry a pause mechanism — prefers-reduced-motion is
+   not a sufficient technique on its own. Tab to it and it takes its place
+   back, bottom right, exactly as it was. */
+.press-pause.is-quiet:not(:focus-visible) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .press-pause {
   position: absolute;
   right: var(--margin);
@@ -2099,7 +2101,6 @@ a {
 }
 
 @media (max-width: 640px) {
-  .hint { display: none; }
   .press-pause { left: var(--margin); right: auto; }
 }
 
