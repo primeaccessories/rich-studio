@@ -1,0 +1,76 @@
+/**
+ * The pages the books open onto.
+ *
+ * When you press a sheet in the hero rail it opens like a book, and what
+ * is inside is a capture of the case study page it is about to take you
+ * to — the real header, the real hero, the real title. These are those
+ * captures.
+ *
+ * THEY ARE BUILD OUTPUT COMMITTED TO THE REPO, and nothing regenerates
+ * them automatically. If a case study's images, copy or layout change,
+ * its book will keep opening onto the old page until you re-run this.
+ *
+ *   npm run build
+ *   npx serve out -p 4325 &
+ *   node scripts/capture-spreads.mjs
+ *
+ * WebGL is disabled deliberately: with it on, the case study hero is
+ * mid-press-pass at capture time and the halftone gets baked into the
+ * picture. Off, RegistrationHero shows its plain image, which is what the
+ * page settles to anyway.
+ */
+import { chromium } from 'playwright';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+const SLUGS = [
+  'silverstone', 'hellmanns', 'walls',
+  'absolut', 'networkrail', 'strongbow',
+];
+const ORIGIN = process.env.ORIGIN ?? 'http://localhost:4325';
+const OUT = 'public/press/spread';
+
+/* The spread is two leaves of 760x1000, so 1520x1000 — capture at that
+   aspect and the page needs no cropping to fit it. */
+const W = 1520;
+const H = 1000;
+
+const tmp = mkdtempSync(join(tmpdir(), 'spreads-'));
+
+try {
+  const browser = await chromium.launch({
+    args: ['--disable-webgl', '--disable-webgl2'],
+  });
+  const ctx = await browser.newContext({
+    viewport: { width: W, height: H },
+    deviceScaleFactor: 1,
+  });
+
+  for (const slug of SLUGS) {
+    const page = await ctx.newPage();
+    await page.goto(`${ORIGIN}/work/${slug}`, { waitUntil: 'domcontentloaded' });
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(2600);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(600);
+    const shot = join(tmp, `${slug}.png`);
+    await page.screenshot({ path: shot });
+    await page.close();
+
+    // ~80KB each. Six of them load through idle time after the rail is
+    // up, so this is weight the hero never waits on — but it is still
+    // half a megabyte, which is why it is not full size.
+    execFileSync('convert', [
+      shot, '-resize', '1216x800', '-strip',
+      '-quality', '76', '-define', 'webp:method=6',
+      `${OUT}/${slug}.webp`,
+    ]);
+    console.log('captured', slug);
+  }
+
+  await browser.close();
+} finally {
+  rmSync(tmp, { recursive: true, force: true });
+}

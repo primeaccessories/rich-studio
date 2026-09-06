@@ -20,12 +20,12 @@ import type { PressProject, Theme } from '@/lib/pressSheets';
  */
 
 export const PRESS_PROJECTS: PressProject[] = [
-  { slug: 'silverstone', title: 'REBRAND FOR SILVERSTONE RACECOURSE', client: 'SILVERSTONE',  tone: '#223549', kind: 4, words: ['HOME OF', 'RACING'],          art: '/press/silverstone.webp', hero: '/work/silverstone/00.webp' },
-  { slug: 'hellmanns',   title: "HELLMANN'S AD CAMPAIGN",             client: "HELLMANN'S",   tone: '#c6a675', kind: 3, words: ['REAL', 'FOOD'],              art: '/press/hellmanns.webp', hero: '/work/hellmanns/00.webp' },
-  { slug: 'walls',       title: "WALL'S MAKES IT HAPPIER",            client: "WALL'S",       tone: '#e1251a', kind: 0, words: ['TASTE', 'HAPPIER', 'TODAY'], art: '/press/walls.webp', hero: '/work/walls/00.webp' },
-  { slug: 'absolut',     title: 'ABSOLUT HALLOWEEN',                  client: 'ABSOLUT',      tone: '#d66511', kind: 1, words: ['ABSOLUT'],                   art: '/press/absolut.webp', hero: '/work/absolut/00.webp' },
-  { slug: 'networkrail', title: 'CREATIVE RETOUCH FOR NETWORK RAIL',  client: 'NETWORK RAIL', tone: '#533123', kind: 5, words: ['EVERY', 'JOURNEY'],          art: '/press/networkrail.webp', hero: '/work/networkrail/00.webp' },
-  { slug: 'strongbow',   title: 'AD CAMPAIGN FOR STRONGBOW',          client: 'STRONGBOW',    tone: '#592e62', kind: 2, words: ['CRISP', 'GOLD'],             art: '/press/strongbow.webp', hero: '/work/strongbow/00.webp' },
+  { slug: 'silverstone', title: 'REBRAND FOR SILVERSTONE RACECOURSE', client: 'SILVERSTONE',  tone: '#223549', kind: 4, words: ['HOME OF', 'RACING'],          art: '/press/silverstone.webp', hero: '/work/silverstone/00.webp', page: '/press/spread/silverstone.webp' },
+  { slug: 'hellmanns',   title: "HELLMANN'S AD CAMPAIGN",             client: "HELLMANN'S",   tone: '#c6a675', kind: 3, words: ['REAL', 'FOOD'],              art: '/press/hellmanns.webp', hero: '/work/hellmanns/00.webp', page: '/press/spread/hellmanns.webp' },
+  { slug: 'walls',       title: "WALL'S MAKES IT HAPPIER",            client: "WALL'S",       tone: '#e1251a', kind: 0, words: ['TASTE', 'HAPPIER', 'TODAY'], art: '/press/walls.webp', hero: '/work/walls/00.webp', page: '/press/spread/walls.webp' },
+  { slug: 'absolut',     title: 'ABSOLUT HALLOWEEN',                  client: 'ABSOLUT',      tone: '#d66511', kind: 1, words: ['ABSOLUT'],                   art: '/press/absolut.webp', hero: '/work/absolut/00.webp', page: '/press/spread/absolut.webp' },
+  { slug: 'networkrail', title: 'CREATIVE RETOUCH FOR NETWORK RAIL',  client: 'NETWORK RAIL', tone: '#533123', kind: 5, words: ['EVERY', 'JOURNEY'],          art: '/press/networkrail.webp', hero: '/work/networkrail/00.webp', page: '/press/spread/networkrail.webp' },
+  { slug: 'strongbow',   title: 'AD CAMPAIGN FOR STRONGBOW',          client: 'STRONGBOW',    tone: '#592e62', kind: 2, words: ['CRISP', 'GOLD'],             art: '/press/strongbow.webp', hero: '/work/strongbow/00.webp', page: '/press/spread/strongbow.webp' },
 ];
 
 const N = PRESS_PROJECTS.length;
@@ -95,12 +95,15 @@ export default function PressHero({
        rather than throw — a stalled import, a device that never returns
        a context. */
     let settled = false;
+    // Assigned once the rail is built; see "the page each book opens onto".
+    let onLive: (() => void) | null = null;
     function pressLive() {
       if (settled || disposed) return;
       settled = true;
       window.clearTimeout(backstop);
       canvas!.classList.add('is-ready');
       document.documentElement.dataset.press = 'live';
+      onLive?.();
     }
     function pressDown() {
       if (settled || disposed) return;
@@ -241,6 +244,7 @@ export default function PressHero({
         verso: import('three').Mesh;                  // the left leaf itself
         pageBuilt: boolean;
         heroImg: HTMLImageElement | null;
+        pageImg: HTMLImageElement | null;   // the case study page capture
         openT: number;
         mesh: import('three').Mesh;
         shadow: import('three').Mesh;
@@ -327,7 +331,7 @@ export default function PressHero({
 
         slabs.push({
           group, hinge, pageMat, pageMatL, verso: coverBack,
-          openT: 0, pageBuilt: false, heroImg: null,
+          openT: 0, pageBuilt: false, heroImg: null, pageImg: null,
           mesh, shadow: sh, canvas: c, sep, mats, project: p,
           // Fully printed from the first frame. Running the press pass on
           // load meant landing on a halftone dot field that resolved while
@@ -405,6 +409,38 @@ export default function PressHero({
       // Never hold the hero hostage to a slow or failed image.
       const revealTimer = window.setTimeout(reveal, 2600);
       cleanups.push(() => window.clearTimeout(revealTimer));
+
+      /* ---------- the page each book opens onto ----------
+         Half a megabyte of case study captures, so NOT on the critical
+         path: they start only once the rail is up and then one at a time
+         through idle time. Until one lands its book opens onto the drawn
+         layout, which is a floor, not a placeholder that must be waited
+         for. */
+      onLive = () => {
+        let n = 0;
+        const next = () => {
+          if (disposed || n >= PRESS_PROJECTS.length) return;
+          const i = n++;
+          const src = PRESS_PROJECTS[i].page;
+          if (!src) { idle(next); return; }
+          const pi = new Image();
+          pi.crossOrigin = 'anonymous';
+          pi.decoding = 'async';
+          pi.onload = () => {
+            if (disposed) return;
+            slabs[i].pageImg = pi;
+            try {
+              dressSpread(slabs[i], sheets.caseStudySpreadTexture(
+                PRESS_PROJECTS[i], T, PW, PH, slabs[i].heroImg, pi));
+              slabs[i].pageBuilt = true;
+            } catch { /* keep whatever spread is already there */ }
+            idle(next);
+          };
+          pi.onerror = () => idle(next);
+          pi.src = src;
+        };
+        idle(next);
+      };
 
       /* ---------- the destination hero, for the page inside ---------- */
       PRESS_PROJECTS.forEach((p, i) => {
@@ -1139,7 +1175,8 @@ export default function PressHero({
             press.refreshSeparation(s.sep, s.canvas, PW, PH);
           }
           if (s.pageBuilt) {
-            dressSpread(s, sheets.caseStudySpreadTexture(s.project, T, PW, PH, s.heroImg));
+            dressSpread(s, sheets.caseStudySpreadTexture(
+              s.project, T, PW, PH, s.heroImg, s.pageImg));
           } else {
             s.pageMatL.color = new THREE.Color(T.paper);
             s.pageMatL.needsUpdate = true;

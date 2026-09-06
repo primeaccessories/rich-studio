@@ -33,6 +33,10 @@ export interface PressProject {
   /** The case study's own hero — what the zoom lands on, so the cut is
    *  seamless rather than a crossfade between two different pictures. */
   hero?: string;
+  /** A capture of the case study PAGE, for the open book to show. See
+   *  caseStudySpreadTexture: the book opens onto the site, not onto a
+   *  drawing of what the site might look like. */
+  page?: string;
 }
 
 export function cv(w: number, h: number): HTMLCanvasElement {
@@ -451,6 +455,19 @@ export function stampCoverTitle(
 }
 
 
+/* The fold. A real spread is never flat across the gutter, and it is the
+   single thing that stops a full-bleed page capture reading as a poster. */
+function gutter(ctx: CanvasRenderingContext2D, W: number, H: number) {
+  const g = ctx.createLinearGradient(W - 54, 0, W + 54, 0);
+  g.addColorStop(0, 'rgba(10,10,10,0)');
+  g.addColorStop(0.42, 'rgba(10,10,10,.22)');
+  g.addColorStop(0.5, 'rgba(10,10,10,.34)');
+  g.addColorStop(0.58, 'rgba(10,10,10,.22)');
+  g.addColorStop(1, 'rgba(10,10,10,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(W - 54, 0, 108, H);
+}
+
 /**
  * THE SPREAD
  *
@@ -472,6 +489,7 @@ export function caseStudySpreadTexture(
   PW: number,
   PH: number,
   hero?: HTMLImageElement | null,
+  page?: HTMLImageElement | null,
 ): THREE.CanvasTexture {
   const c = cv(PW * 2, PH);
   const ctx = c.getContext('2d')!;
@@ -484,6 +502,21 @@ export function caseStudySpreadTexture(
   ctx.fillStyle = T.paper;
   ctx.fillRect(0, 0, SW, H);
   ctx.textBaseline = 'alphabetic';
+
+  /* THE PAGE ITSELF.
+     When the capture has arrived the book opens onto the actual case
+     study — its header, its hero, its title — laid across both leaves.
+     The drawn layout below is the floor: it is what you get for the
+     second or two before the capture lands, and if it never lands. */
+  if (page && page.naturalWidth) {
+    ctx.drawImage(page, 0, 0, SW, H);
+    gutter(ctx, W, H);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    grain(ctx, PW * 2, PH, 8);
+    const t = new THREE.CanvasTexture(c);
+    t.anisotropy = 4;
+    return t;
+  }
 
   /* The hero, bleeding across the whole spread. */
   const heroH = 560;
@@ -550,15 +583,7 @@ export function caseStudySpreadTexture(
   ctx.fillRect(W + 56, heroH + 270, W - 112, 96);
   ctx.globalAlpha = 1;
 
-  /* The fold. A real spread is never flat across the gutter. */
-  const g = ctx.createLinearGradient(W - 54, 0, W + 54, 0);
-  g.addColorStop(0, 'rgba(10,10,10,0)');
-  g.addColorStop(0.42, 'rgba(10,10,10,.22)');
-  g.addColorStop(0.5, 'rgba(10,10,10,.34)');
-  g.addColorStop(0.58, 'rgba(10,10,10,.22)');
-  g.addColorStop(1, 'rgba(10,10,10,0)');
-  ctx.fillStyle = g;
-  ctx.fillRect(W - 54, 0, 108, H);
+  gutter(ctx, W, H);
 
   /* Folios, and the register mark on the recto. */
   ctx.fillStyle = T.ink;
