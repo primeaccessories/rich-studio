@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import type { Facet } from '@/lib/work';
 
@@ -26,10 +27,18 @@ export default function WorkCategories({
   facets,
   active,
   onPick,
+  hrefBase,
 }: {
   facets: Facet[];
   active: string;
-  onPick: (name: string) => void;
+  onPick?: (name: string) => void;
+  /* Given, each category is a LINK to the archive rather than a filter
+     applied in place — which is what it has to be on the homepage, where
+     there is no grid underneath for it to act on.
+
+     A string, not a builder function: the homepage is a server component
+     and functions cannot cross that boundary. */
+  hrefBase?: string;
 }) {
   const [live, setLive] = useState<string>(facets[0]?.name ?? '');
   const rootRef = useRef<HTMLDivElement>(null);
@@ -98,19 +107,33 @@ export default function WorkCategories({
         <ul className="cats-list">
           {facets.map((f) => (
             <li key={f.name} data-facet={f.name}>
-              <button
-                type="button"
-                className={`cats-item t-wordmark${active === f.name ? ' is-on' : ''}`}
-                aria-pressed={active === f.name}
-                onMouseEnter={() => setLive(f.name)}
-                onFocus={() => setLive(f.name)}
-                onClick={() => onPick(active === f.name ? 'ALL' : f.name)}
-              >
-                {f.name}
-                <span className="t-mono cats-count">
-                  {String(f.count).padStart(2, '0')}
-                </span>
-              </button>
+              {hrefBase ? (
+                <Link
+                  href={hrefBase + encodeURIComponent(f.name)}
+                  className="cats-item t-wordmark"
+                  onMouseEnter={() => setLive(f.name)}
+                  onFocus={() => setLive(f.name)}
+                >
+                  {f.name}
+                  <span className="t-mono cats-count">
+                    {String(f.count).padStart(2, '0')}
+                  </span>
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  className={`cats-item t-wordmark${active === f.name ? ' is-on' : ''}`}
+                  aria-pressed={active === f.name}
+                  onMouseEnter={() => setLive(f.name)}
+                  onFocus={() => setLive(f.name)}
+                  onClick={() => onPick?.(active === f.name ? 'ALL' : f.name)}
+                >
+                  {f.name}
+                  <span className="t-mono cats-count">
+                    {String(f.count).padStart(2, '0')}
+                  </span>
+                </button>
+              )}
             </li>
           ))}
         </ul>

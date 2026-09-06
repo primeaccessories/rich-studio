@@ -1,8 +1,8 @@
 import Masthead from '@/components/Masthead';
 import StatementHold from '@/components/StatementHold';
-import WorkGrid from '@/components/WorkGrid';
+import WorkCategories from '@/components/WorkCategories';
 import SiteFooter from '@/components/SiteFooter';
-import { ALL_WORK, DISCIPLINES, INDUSTRIES } from '@/lib/work';
+import { INDUSTRY_FACETS } from '@/lib/work';
 
 export default function Home() {
   return (
@@ -16,11 +16,14 @@ export default function Home() {
 
       <StatementHold />
 
-      <WorkGrid
-        items={ALL_WORK}
-        disciplines={DISCIPLINES}
-        industries={INDUSTRIES}
-        heading="WORK"
+      {/* The industry index, not the whole archive. Thirty one tiles here
+          duplicated the /work page and buried the one thing the homepage
+          should do: show what kind of work this is, and send you in. Each
+          category carries its own filter across to the archive. */}
+      <WorkCategories
+        facets={INDUSTRY_FACETS}
+        active=""
+        hrefBase="/work?industry="
       />
 
       <SiteFooter />

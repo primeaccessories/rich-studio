@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import WorkCategories from './WorkCategories';
 import WorkGrid from './WorkGrid';
 import type { Facet, WorkItem } from '@/lib/work';
@@ -22,6 +22,16 @@ export default function WorkBrowser({
   facets: Facet[];
 }) {
   const [industry, setIndustry] = useState('ALL');
+
+  /* Arriving from the homepage index with ?industry=... Read after mount,
+     not during render: this page is statically exported, so the server
+     HTML knows nothing about the query and reading it while rendering
+     would be a hydration mismatch. */
+  useEffect(() => {
+    const want = new URLSearchParams(window.location.search).get('industry');
+    if (want && industries.includes(want)) setIndustry(want);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const pick = useCallback((name: string) => {
     setIndustry(name);

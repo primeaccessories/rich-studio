@@ -40,7 +40,7 @@ export default function Masthead() {
           band into a .pin-spacer, and React would then unmount it against
           a parent that no longer holds it. The wrapper is a node React
           owns and ScrollTrigger never touches. */}
-      <div className="pin-host">
+      <div className="pin-host band-host">
       <section className="masthead-foot hero-band">
         <p className="t-statement masthead-strap" data-split>
           BRANDING / DESIGN /

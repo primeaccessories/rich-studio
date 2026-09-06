@@ -1921,6 +1921,22 @@ a {
    standalone section that would paint over whatever follows. */
 .hero-band::after { content: none; }
 
+/* Pinning the band inserts a spacer to hold its place in the flow, and
+   that spacer sat between the hooked band and the next section as a band
+   of empty paper — through which you could see the hero, still pinned
+   behind it. Painting the HOST covers exactly that spacer and no more:
+   the host is the band plus its spacer, so it ends where the next section
+   begins and cannot bleed over it. The ink simply holds the screen while
+   the band is hooked, which is what it looked like it was going to do. */
+/* z-index matters here: .stage is position:relative z-index:1, so without
+   its own layer the host's ink paints UNDER the pinned hero and the books
+   show straight through the space. */
+.band-host {
+  position: relative;
+  z-index: 4;
+  background: var(--ink);
+}
+
 .hero-index {
   grid-column: 1 / -1;
   position: absolute;
