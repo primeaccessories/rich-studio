@@ -218,7 +218,7 @@ a {
   font-size: clamp(0.82rem, 1.02vw, 0.98rem);
   line-height: 1.55;
   letter-spacing: 0.005em;
-  max-width: 46ch;
+  max-width: 30ch;
 }
 
 .t-caps {
@@ -584,7 +584,14 @@ a {
      in the band under the rail; it does not need to compete with the work
      above it. */
   font-size: clamp(1rem, 2vw, 1.7rem);
-  line-height: 1.08;
+  line-height: 1.12;
+  /* A measure, not a hard <br />. The breaks that used to be in the markup
+     forced three lines at EVERY width; a measure gives a couple of lines
+     on a wide screen and lets a narrow one wrap where it needs to.
+
+     This costs the band nothing: its height is set by the FEATURED block
+     beside it (89px), and two lines of this come to about 60. */
+  max-width: 30ch;
 }
 
 .masthead-feature {
@@ -1621,13 +1628,13 @@ a {
 }
 
 .hold-copy {
-  max-width: 22ch;
+  max-width: 30ch;
   margin-inline: auto;
   text-align: center;
 }
 
 .hold-body {
-  max-width: 62ch;
+  max-width: 30ch;
   margin-inline: auto;
   text-align: center;
 }
