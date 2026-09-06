@@ -99,7 +99,18 @@ export default function StatementHold() {
         .timeline({
           scrollTrigger: {
             trigger: el,
-            start: 'top top',
+            /* Below the hooked band, not behind it. The band is held under
+               the header for the whole of this section, so pinning at
+               'top top' would put the statement's head underneath it.
+               Both measurements are published as custom properties —
+               --head-h by the chrome, --band-h by the rail — because
+               neither is knowable in CSS here. */
+            start: () => {
+              const cs = getComputedStyle(document.documentElement);
+              const head = parseFloat(cs.getPropertyValue('--head-h')) || 72;
+              const band = parseFloat(cs.getPropertyValue('--band-h')) || 0;
+              return `top ${Math.round(head + band)}px`;
+            },
             end: '+=140%',
             pin: true,
             // See Masthead: #smooth-content is a containing block, so a

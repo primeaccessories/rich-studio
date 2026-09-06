@@ -47,6 +47,11 @@ export default function Masthead() {
         onOpen={(slug) => router.push(`/work/${slug}`)}
       />
 
+      {/* .band-hook is what gets pinned; .hero-band inside it is what
+          slides off at the end. They have to be two elements: ScrollTrigger
+          owns the transform of whatever it pins, so the band could not
+          both be held and moved by the same property. */}
+      <div className="band-hook">
       <section className="masthead-foot hero-band">
         {/* No hard breaks. They forced three lines at every width, which
             was most of the band's height — it now wraps to its own
@@ -104,6 +109,7 @@ export default function Masthead() {
           ))}
         </ul>
       </section>
+      </div>
       </div>
       </div>
     </>

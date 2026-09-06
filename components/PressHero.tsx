@@ -936,6 +936,10 @@ export default function PressHero({
 
          The trigger stays, without the pin, because the veil still needs
          the hero's progress to darken by. */
+      const headH = () =>
+        parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue('--head-h'),
+        ) || 72;
       const heroHost = stage.closest<HTMLElement>('.hero-host') ?? stage;
       const st = ScrollTrigger.create({
         trigger: heroHost,
@@ -950,13 +954,84 @@ export default function PressHero({
       });
       cleanups.push(() => st.kill(true));
 
-      /* The band has no pin of its own any more. It is inside .hero-host,
-         so the hero's pin holds it: stuck to the rail above it rather
-         than hooking itself to the header on a separate schedule. What is
-         still needed from here is --band-h, which the stage's height is
-         calculated from. */
+      /* ---------- the band hooks, and stays for the statement ----------
+         It rides up over the rail, catches under the header, holds there
+         for the whole of the statement of practice, and then leaves with
+         it.
+
+         WITH pin spacing, and that is what makes it leave rather than
+         vanish: without a spacer the band's own place in the flow carries
+         on up the page while it is held, so releasing it would snap it to
+         wherever that had got to — far above the screen. Spaced, its
+         place is held too, so at the end it is exactly where it appears
+         to be and simply scrolls away.
+
+         It ends on the STATEMENT, not on a distance: the statement is
+         what it is staying for, so the two are tied together rather than
+         being two timings that have to be kept in agreement by hand. */
       const bandEl = document.querySelector<HTMLElement>('.hero-band');
+      const hookEl = document.querySelector<HTMLElement>('.band-hook');
+      const holdEl = document.querySelector<HTMLElement>('.hold');
       if (bandEl) {
+        if (hookEl) {
+          /* UNSPACED, and that is forced rather than chosen.
+
+             A spaced pin reserves its hold in the flow, so everything
+             after it starts only once the hold is over — the band could
+             never be held DURING the statement, because its own spacer
+             pushed the statement past it by exactly the same distance.
+             Measured: end=1728 landed precisely where the statement
+             pinned, every time, whatever duration was asked for.
+
+             Unspaced, the statement rides up while the band is held,
+             which is the ask. The cost is that releasing an unspaced pin
+             returns the element to wherever its place in the flow has got
+             to — a long way above the screen — so it would vanish rather
+             than leave. Hence the slide: the band is walked off the top
+             over the last fifth of the hold, and by the time the pin
+             actually releases it is already gone. */
+          const bandOffPx = () => Math.round(bandEl.getBoundingClientRect().height + headH() + 8);
+          const bandHook = ScrollTrigger.create({
+            trigger: hookEl,
+            start: () => `top ${headH()}px`,
+            end: () => {
+              const cs = getComputedStyle(document.documentElement);
+              const head = parseFloat(cs.getPropertyValue('--head-h')) || 72;
+              const band = parseFloat(cs.getPropertyValue('--band-h')) || 0;
+              const holdTopDoc = holdEl
+                ? holdEl.getBoundingClientRect().top + window.scrollY
+                : 0;
+              // Where the statement pins, plus the 140% it holds for.
+              return holdTopDoc - (head + band) + 1.4 * window.innerHeight;
+            },
+            pin: hookEl,
+            pinType: 'transform',
+            pinSpacing: false,
+            invalidateOnRefresh: true,
+            onUpdate: (self) => {
+              const p = self.progress;
+              const t = p < 0.8 ? 0 : (p - 0.8) / 0.2;
+              bandEl.style.transform = t
+                ? `translate3d(0, ${-t * bandOffPx()}px, 0)`
+                : '';
+            },
+            /* Deliberately NOT cleared on leave. Past the end the pin
+               stops holding the band and it returns to its place in the
+               flow, which by then has travelled on up the page; clearing
+               the slide at the same moment snapped it 210px back DOWN
+               into view before it left again. Keeping the slide means the
+               two cancel and it just carries on off the top.
+
+               Cleared on the way back UP, where the band is returning to
+               the hero and has to be whole again. */
+            onLeaveBack: () => { bandEl.style.transform = ''; },
+          });
+          cleanups.push(() => {
+            bandHook.kill(true);
+            bandEl.style.transform = '';
+          });
+        }
+
         const publishBandHeight = () => {
           if (disposed) return;
           const h = Math.round(bandEl.getBoundingClientRect().height);

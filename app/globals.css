@@ -738,7 +738,11 @@ a {
 .hold {
   position: relative;
   z-index: 1;
-  min-height: 100svh;
+  /* The visible screen, less the header and the band hooked beneath it —
+     because the band is held at the top for the whole of this section, so
+     a full 100svh here centres the statement in a box whose top third is
+     covered and drops it about 100px low. */
+  min-height: calc(100svh - var(--head-h) - var(--band-h, 0px));
   display: flex;
   align-items: center;
   background: var(--paper-2);
