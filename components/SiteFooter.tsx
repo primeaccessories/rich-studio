@@ -24,8 +24,6 @@ export default function SiteFooter() {
 
   return (
     <footer className="site-footer sheet" id="contact">
-      <p className="t-display footer-shout" data-split>THAT&#39;S ALL F**KS</p>
-
       <div className="footer-contact" data-reveal="stagger">
         <div className="footer-col">
           <h2 className="t-mono footer-h">GET &#174;RICH QUICK.</h2>
@@ -64,6 +62,13 @@ export default function SiteFooter() {
             STALK US
           </a>
         </span>
+      </div>
+
+      {/* His sign-off, last thing on the page and the full width of it.
+          The mask is what it rises out of — data-rise animates the child,
+          so the two elements are not interchangeable. */}
+      <div className="footer-shout-mask" data-rise>
+        <p className="t-display footer-shout">THAT&#39;S ALL F**KS</p>
       </div>
     </footer>
   );

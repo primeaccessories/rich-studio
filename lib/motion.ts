@@ -93,6 +93,38 @@ export function initMotion(): () => void {
       cleanups.push(() => split.revert());
     });
 
+    /* ---------- data-rise ----------
+       Something that comes up out of its own mask as you reach it. The
+       mask carries the attribute, its child is what moves.
+
+       fromTo, never to: with a scrubbed trigger a plain .to() re-reads
+       the current value as its start whenever ScrollTrigger refreshes,
+       and once the element has rendered at rest the tween becomes a
+       no-op that can never animate again. */
+    gsap.utils.toArray<HTMLElement>('[data-rise]').forEach((el) => {
+      const inner = el.firstElementChild as HTMLElement | null;
+      if (!inner) return;
+      if (reduced) {
+        gsap.set(inner, { yPercent: 0 });
+        return;
+      }
+      gsap.fromTo(
+        inner,
+        { yPercent: 100 },
+        {
+          yPercent: 0,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: el,
+            start: 'top bottom',
+            end: 'bottom bottom',
+            scrub: 0.6,
+            invalidateOnRefresh: true,
+          },
+        },
+      );
+    });
+
     /* ---------- magnetic controls ---------- */
     if (!reduced && window.matchMedia('(pointer: fine)').matches) {
       gsap.utils.toArray<HTMLElement>('.magnetic').forEach((el) => {
@@ -171,6 +203,18 @@ export function initMotion(): () => void {
           if (parseFloat(getComputedStyle(el).opacity) > 0.05) return;
           gsap.to(el, { opacity: 1, y: 0, yPercent: 0, duration: 0.3, ease: 'power2.out' });
         });
+
+      // A risen element is hidden by POSITION, not opacity, so the check
+      // above cannot see it. If a mask is on screen and its child is still
+      // sitting below the bottom of it, bring it up.
+      document.querySelectorAll<HTMLElement>('[data-rise]').forEach((el) => {
+        const r = el.getBoundingClientRect();
+        if (r.bottom < 0 || r.top > vh || !r.height) return;
+        const inner = el.firstElementChild as HTMLElement | null;
+        if (!inner) return;
+        if (inner.getBoundingClientRect().top < r.bottom - 2) return;
+        gsap.to(inner, { yPercent: 0, duration: 0.4, ease: 'power2.out' });
+      });
     }, 1500);
     cleanups.push(() => window.clearInterval(sweep));
   });
