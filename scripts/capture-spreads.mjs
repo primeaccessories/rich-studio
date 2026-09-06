@@ -35,10 +35,22 @@ const SLUGS = [
 const ORIGIN = process.env.ORIGIN ?? 'http://localhost:4325';
 const OUT = 'public/press/spread';
 
-/* The spread is two leaves of 760x1000, so 1520x1000 — capture at that
-   aspect and the page needs no cropping to fit it. */
-const W = 1520;
-const H = 1000;
+/* Captured at 1440, which is a compromise with a reason.
+
+   This image is what the cinematic zooms to full screen, and it then
+   hands over to the REAL page. A capture is a fixed layout; the page is
+   responsive — so at a window far from the capture's width the two do not
+   match, and the handover reads as a jump: the captured type is scaled by
+   window/captureWidth while the real page has re-laid itself out. There
+   is no scale that fixes that, because responsive is not the same as
+   scaled.
+
+   1440 is the middle of the desktop range, so the mismatch is smallest
+   where most people are, and it is still 1.33x of a 1920 window rather
+   than a soft upscale. Wider captures are sharper and match worse;
+   narrower ones match more windows and blur on big screens. */
+const W = 1440;
+const H = 947;
 
 const tmp = mkdtempSync(join(tmpdir(), 'spreads-'));
 const manifest = {};
@@ -81,7 +93,7 @@ try {
        land on looked soft. Quality drops a little to keep the weight
        roughly where it was. */
     execFileSync('convert', [
-      shot, '-resize', '1600x1053', '-strip',
+      shot, '-resize', '1440x947', '-strip',
       '-quality', '70', '-define', 'webp:method=6',
       tmpWebp,
     ]);
