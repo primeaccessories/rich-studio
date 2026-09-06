@@ -241,6 +241,19 @@ export default function PressHero({
 
       /* ---------- the rail ---------- */
       const SPACING = 3.15, SLAB_W = 2.15, SLAB_H = 2.85, SLAB_D = 0.62;
+
+      /* How far out a sheet is still drawn, and the fade that has to be
+         finished before it gets there.
+
+         These two were separate numbers and had drifted apart: sheets
+         were culled at 2.2 while their fade did not complete until 2.85,
+         so each one blinked out at about 58% opacity and blinked back in
+         the same way as the rail turned. That is the flicker either side
+         of the press. Derived from the cull now, so they cannot part
+         company again. */
+      const CULL = 2.2;
+      const FADE_IN = CULL - 0.85;
+      const FADE_OUT = CULL - 0.05;
       let edgeV = sheets.edgeTexture(true, T);
       let edgeH = sheets.edgeTexture(false, T);
       const shadowTex = sheets.shadowTexture();
@@ -641,7 +654,7 @@ export default function PressHero({
         const px = clientX - sr.left, py = clientY - sr.top;
         let best = -1, bestD = Infinity;
         slabs.forEach((sl, i) => {
-          if (Math.abs(wrapRel(i - pos)) > 2.2) return;   // only what is on screen
+          if (Math.abs(wrapRel(i - pos)) > CULL) return;   // only what is on screen
           nearPt.set(0, 0, SLAB_D / 2);
           sl.mesh.localToWorld(nearPt);
           nearPt.project(camera);
@@ -1313,7 +1326,7 @@ export default function PressHero({
           s.group.rotation.x = (reduced ? 0 : Math.sin(t * 0.4 + i) * 0.015) + my * 0.05 * (1 - focus);
           s.group.rotation.z = rel * 0.012;
 
-          const edge = 1 - smooth(N / 2 - 1.25, N / 2 - 0.15, Math.abs(rel));
+          const edge = 1 - smooth(FADE_IN, FADE_OUT, Math.abs(rel));
           const op = (isCentre ? 1 : lerp(1, 0.06, focus)) * edge;
           for (let m = 0; m < s.mats.length; m++) {
             if (m !== 4 && m !== 6) (s.mats[m] as import('three').MeshBasicMaterial).opacity = op;
