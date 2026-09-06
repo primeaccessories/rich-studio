@@ -800,6 +800,33 @@ export default function PressHero({
       });
       cleanups.push(() => st.kill(true));
 
+      /* ---------- the band hooks under the header ----------
+         The band rides up over the pinned stage, and used to carry
+         straight on past the top edge and away. It now catches under the
+         header and holds there while the page keeps moving, then lets go.
+
+         Built here rather than in Masthead, which owns the markup, for
+         one reason: ordering. A pin created before ScrollSmoother exists
+         measures against the wrong scroller, and React runs a child's
+         effects before its parent's — so a pin set up in Masthead would
+         race the one below it. This effect already runs after both. */
+      const bandEl = document.querySelector<HTMLElement>('.hero-band');
+      if (bandEl) {
+        const headH = () =>
+          parseFloat(
+            getComputedStyle(document.documentElement).getPropertyValue('--head-h'),
+          ) || 72;
+        const bandST = ScrollTrigger.create({
+          trigger: bandEl,
+          start: () => `top ${headH()}px`,
+          end: '+=42%',
+          pin: true,
+          pinType: 'transform',
+          invalidateOnRefresh: true,
+        });
+        cleanups.push(() => bandST.kill(true));
+      }
+
       /* ---------- loop ---------- */
       const clock = new THREE.Clock();
       let elapsed = 0, mx = 0, my = 0, shownIndex = PRESS_START;

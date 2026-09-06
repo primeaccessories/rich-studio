@@ -1951,7 +1951,10 @@ a {
   z-index: 5;                  /* rides up over the pinned stage */
   margin-inline: 0;            /* it is its own section now, not inset */
   padding-inline: var(--margin);
-  transform: none !important;  /* the old rise animation is gone */
+  /* No `transform: none !important` here. It was left behind when an old
+     rise animation was removed, and being !important it silently beat the
+     inline transform ScrollTrigger writes to pin this band — the pin
+     activated correctly and moved nothing. */
 }
 
 /* The old band carried a 100svh ink panel beneath it for the rise. As a

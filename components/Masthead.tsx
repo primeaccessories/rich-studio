@@ -36,6 +36,11 @@ export default function Masthead() {
         onOpen={(slug) => router.push(`/work/${slug}`)}
       />
 
+      {/* .pin-host is not decoration: ScrollTrigger's pin reparents the
+          band into a .pin-spacer, and React would then unmount it against
+          a parent that no longer holds it. The wrapper is a node React
+          owns and ScrollTrigger never touches. */}
+      <div className="pin-host">
       <section className="masthead-foot hero-band">
         <p className="t-statement masthead-strap" data-split>
           BRANDING / DESIGN /
@@ -94,6 +99,7 @@ export default function Masthead() {
           ))}
         </ul>
       </section>
+      </div>
     </>
   );
 }
