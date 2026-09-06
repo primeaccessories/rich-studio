@@ -318,7 +318,14 @@ export default function PressHero({
       // The rail runs on its own — an idle carousel reads as broken. Drag
       // and page-scroll add to that motion rather than replacing it.
       const AUTO_DRIFT = 0.17;      // sheets per second at rest
+      const BOOST_K = 0.0006;       // per px of scroll
+      const BOOST_MAX = 0.9;        // ~6x resting at full fling, not 31x
       let boost = 0;                // decaying bonus from scrolling
+      // An explicit choice (tick, arrow key, centring click) must survive
+      // long enough to read; drift would otherwise carry it straight off.
+      let holdUntil = 0;
+      // A press on any sheet flies it to centre, opens it, then navigates.
+      let opening: { i: number; slug: string; at: number } | null = null;
       let lastScrollY = window.scrollY;
       const pointer = { x: 0, y: 0 };
       let dragging = false, dragStart = 0, posStart = 0, moved = 0, lastX = 0;
@@ -367,15 +374,19 @@ export default function PressHero({
         stage!.classList.remove('dragging');
         if (moved < 7) {
           const i = pickIndex(e.clientX, e.clientY);
-          if (i >= 0) {
-            const rel = wrapRel(i - Math.round(target));
-            if (Math.abs(rel) < 0.01) {
-              focusTarget = focus > 0.5 ? 0 : 1;
-              if (focusTarget === 1) slabs[i].printT = -0.1;
-              // A second click on an already-open sheet opens the case study.
-              if (focusTarget === 0 && onOpenRef.current) onOpenRef.current(PRESS_PROJECTS[i].slug);
-            } else { target = Math.round(target) + rel; focusTarget = 0; }
-          } else focusTarget = 0;
+          if (i >= 0 && !opening) {
+            // One press does the lot: the sheet flies to centre, opens,
+            // and hands over to its case study. Rebased on pos, which is
+            // what the raycast and the visible rail agree on — target has
+            // already drifted past it.
+            target = Math.round(pos) + wrapRel(i - Math.round(pos));
+            focusTarget = 1;
+            slabs[i].printT = -0.1;          // print it again as it opens
+            holdUntil = performance.now() + 8000;
+            opening = { i, slug: PRESS_PROJECTS[i].slug, at: performance.now() };
+          } else if (i < 0 && !opening) {
+            focusTarget = 0;
+          }
         }
         // Deliberately no snap-to-integer here. The rail is always
         // drifting, so snapping would fight it and jerk on every release.
@@ -388,9 +399,9 @@ export default function PressHero({
         }
       };
       const onKey = (e: KeyboardEvent) => {
-        if (e.key === 'ArrowRight') { target = Math.round(target) + 1; focusTarget = 0; }
-        if (e.key === 'ArrowLeft') { target = Math.round(target) - 1; focusTarget = 0; }
-        if (e.key === 'Escape') focusTarget = 0;
+        if (e.key === 'ArrowRight') { target = Math.round(pos) + 1; focusTarget = 0; holdUntil = performance.now() + 2600; }
+        if (e.key === 'ArrowLeft') { target = Math.round(pos) - 1; focusTarget = 0; holdUntil = performance.now() + 2600; }
+        if (e.key === 'Escape') { opening = null; focusTarget = 0; holdUntil = 0; }
       };
 
       stage.addEventListener('pointerdown', onDown);
@@ -412,6 +423,7 @@ export default function PressHero({
       (stage as HTMLElement & { __goTo?: (i: number) => void }).__goTo = (i: number) => {
         target += wrapRel(i - target);
         focusTarget = 0;
+        holdUntil = performance.now() + 2600;   // let the choice be read
       };
 
       /* ---------- pin + veil ----------
@@ -444,9 +456,19 @@ export default function PressHero({
       /* ---------- loop ---------- */
       const clock = new THREE.Clock();
       let elapsed = 0, mx = 0, my = 0, shownIndex = PRESS_START;
+      let lastEmit = 0, pendingEmit: number | null = null;
       let raf = 0;
       let visible = true;
-      const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; }, { threshold: 0 });
+      const io = new IntersectionObserver(([e]) => {
+        const was = visible;
+        visible = e.isIntersecting;
+        // Restart the loop on re-entry; it stops scheduling when hidden.
+        if (visible && !was && !retired && !raf) {
+          clock.getDelta();               // drop the gap so dt is not a jump
+          lastScrollY = window.scrollY;   // and do not bank the scroll we missed
+          raf = requestAnimationFrame(frame);
+        }
+      }, { threshold: 0 });
       io.observe(stage);
       cleanups.push(() => io.disconnect());
 
@@ -462,25 +484,30 @@ export default function PressHero({
       };
 
       function frame() {
-        raf = requestAnimationFrame(frame);
-        const dt = Math.min(clock.getDelta(), 0.05);
+        raf = 0;
+        const rawDt = clock.getDelta();
+        const realDt = rawDt;               // uncapped, for decay
+        const dt = Math.min(rawDt, 0.05);   // capped, for motion
         // window.scrollY is the RAW native scroll position: ScrollSmoother
         // really does scroll the page and lerps the content transform, so
         // the smoothed visual position LAGS this. That is the behaviour we
         // want — the boost should answer the visitor's input, not the
         // eased result of it.
         //
-        // Scroll sample is taken BEFORE the visibility gate, and the
-        // per-frame delta is clamped. Sampling inside the gate let
-        // lastScrollY go stale while the hero was off screen, so coming
-        // back after a 9000px scroll dumped ~90 into the boost, pinned it
-        // at the clamp, and the rail flew — measured at 2 sheets in 1.4s
-        // against a resting 6s per sheet. The clamp also covers anchor
-        // jumps and restored scroll positions.
+        // The per-frame delta is CLAMPED, and that clamp is load-bearing.
+        // The loop stops while the hero is off screen, so lastScrollY does
+        // go stale; without the clamp, returning after a 9000px scroll
+        // dumped ~90 straight into the boost, pinned it at the ceiling and
+        // the rail flew — measured at 2 sheets in 1.4s against a resting
+        // 6s per sheet. It also covers anchor jumps and restored scroll.
         const sy = window.scrollY;
         const scrolled = Math.min(Math.abs(sy - lastScrollY), 180);
         lastScrollY = sy;
-        boost = Math.min(boost + scrolled * 0.010, 5.5) * Math.pow(0.93, dt * 60);
+        // Decay on REAL elapsed time, not the 0.05-capped dt: after a
+        // backgrounded tab or a long stall, capped dt barely decays the
+        // boost and the rail bursts on return.
+        boost = Math.min(boost + scrolled * BOOST_K, BOOST_MAX) *
+                Math.pow(0.93, Math.min(realDt, 1) * 60);
 
         if (visible && !retired) {
           samples.push(dt * 1000);
@@ -496,15 +523,18 @@ export default function PressHero({
             if (median(samples.slice(-120)) > 55) { // still under ~18fps
               retired = true;
               canvas!.style.display = 'none';
-              cancelAnimationFrame(raf);
+              if (raf) cancelAnimationFrame(raf);
+              raf = 0;
               return;
             }
             samples.length = 0;
           } else if (samples.length > 400) samples.length = 0;
         }
-        // Off-screen the hero costs nothing: the band and the rest of the
-        // page scroll over it for the whole document otherwise.
-        if (!visible) return;
+        // Truly idle off screen — stop scheduling rather than scheduling a
+        // frame that returns immediately. The rest of the page is long, so
+        // that is most of the session. The IntersectionObserver restarts it.
+        if (!visible || retired) return;
+        raf = requestAnimationFrame(frame);
         elapsed += dt;
         const t = elapsed;
 
@@ -524,7 +554,14 @@ export default function PressHero({
         const holdingFocus =
           !!ae && ae !== document.body && !!ae.closest?.('.masthead-feature');
 
-        if (!reduced && !dragging && focusTarget === 0 && !pausedRef.current && !holdingFocus) {
+        // focus (eased) as well as focusTarget: resuming on focusTarget
+        // alone starts the rail moving while the opened sheet is still
+        // visibly shrinking back.
+        const settled = focusTarget === 0 && focus < 0.02;
+        const held = performance.now() < holdUntil;
+
+        if (!reduced && !dragging && settled && !pausedRef.current &&
+            !holdingFocus && !held) {
           target += (AUTO_DRIFT + boost) * dt;
         }
 
@@ -537,10 +574,39 @@ export default function PressHero({
         mx = lerp(mx, pointer.x, 0.06);
         my = lerp(my, pointer.y, 0.06);
 
+        // Hand over once the sheet has actually arrived and opened, so the
+        // navigation lands on the beat rather than at a fixed delay that is
+        // right for exactly one travel distance.
+        if (opening) {
+          const arrived = Math.abs(wrapRel(opening.i - pos)) < 0.06 && focus > 0.86;
+          const overdue = performance.now() - opening.at > 1800;  // never strand a press
+          if (arrived || overdue) {
+            const slug = opening.slug;
+            opening = null;
+            onOpenRef.current?.(slug);
+          }
+        }
+
         const centre = wrapIndex(pos);
         if (centre !== shownIndex) {
           shownIndex = centre;
-          onIndexRef.current?.(centre);
+          // Throttled: Masthead keys the featured title on the slug, so
+          // every emit remounts it and restarts a 620ms entry animation
+          // from opacity 0 + blur. Faster than that and the title never
+          // finishes fading in — it just sits blurred. The trailing emit
+          // guarantees the band ends on the settled sheet.
+          const now = performance.now();
+          if (now - lastEmit > 320) {
+            lastEmit = now;
+            pendingEmit = null;
+            onIndexRef.current?.(centre);
+          } else {
+            pendingEmit = centre;
+          }
+        } else if (pendingEmit !== null && performance.now() - lastEmit > 320) {
+          lastEmit = performance.now();
+          const v = pendingEmit; pendingEmit = null;
+          onIndexRef.current?.(v);
         }
 
         stage!.classList.toggle('focused', focus > 0.5);
@@ -596,8 +662,8 @@ export default function PressHero({
         renderer.setRenderTarget(null);
         renderer.render(postScene, postCam);
       }
-      frame();
-      cleanups.push(() => cancelAnimationFrame(raf));
+      raf = requestAnimationFrame(frame);
+      cleanups.push(() => { if (raf) cancelAnimationFrame(raf); });
 
       /* ---------- redraw once the real fonts land ---------- */
       if (document.fonts?.ready) {
@@ -671,7 +737,7 @@ export default function PressHero({
       <section className="stage" ref={stageRef} aria-label="Selected work">
         <canvas className="press-gl" ref={canvasRef} />
         <p className="hint t-mono" ref={hintRef}>
-          <b>DRAG</b> OR SCROLL TO SPEED THE PRESS · CLICK A SHEET TO OPEN
+          <b>DRAG</b> OR SCROLL TO SPEED THE PRESS · PRESS A SHEET TO OPEN IT
         </p>
 
         {/* WCAG 2.2.2 Pause, Stop, Hide (Level A): the rail starts on its
