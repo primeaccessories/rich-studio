@@ -787,14 +787,21 @@ export default function PressHero({
         el.style.top = r.top + 'px';
         el.style.width = r.width + 'px';
         el.style.height = r.height + 'px';
+        /* The PAGE, not the picture off it.
+
+           This used to zoom the bare hero image and draw the client and
+           title over it, which meant the thing growing to fill the screen
+           looked nothing like the page that then loaded underneath it —
+           no header, no nav, its own typography. Zooming the same capture
+           the book opened onto makes the whole move one continuous shot:
+           the page you are looking at simply gets bigger until it is the
+           page you are on.
+
+           The hero is still the fallback, for any project without a
+           capture yet. */
         el.innerHTML =
-          '<img class="cine-img" alt="" src="' + (proj.hero || proj.art || '') + '">' +
-          '<div class="cine-cap">' +
-          '<span class="t-mono cine-client"></span>' +
-          '<span class="t-display cine-title"></span>' +
-          '</div>';
-        (el.querySelector('.cine-client') as HTMLElement).textContent = proj.client;
-        (el.querySelector('.cine-title') as HTMLElement).textContent = proj.title;
+          '<img class="cine-img" alt="" src="' +
+          (proj.page || proj.hero || proj.art || '') + '">';
         document.body.appendChild(el);
 
         gsap.to(el, {

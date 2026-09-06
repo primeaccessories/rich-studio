@@ -37,11 +37,8 @@ export default function StatementHold() {
     let split: SplitText | null = null;
     const ctx = gsap.context(() => {
       split = new SplitText(target, {
-        // Lines AND words: the lines keep the copy wrapping as it should,
-        // the words are what actually get drawn.
-        type: 'lines,words',
+        type: 'lines',
         linesClass: 'hold-line',
-        wordsClass: 'hold-word',
         // SplitText's default aria:"auto" stamps an aria-label onto the
         // element, which is prohibited on a <p> with no role and fails
         // axe's aria-prohibited-attr. Splitting by LINES leaves the DOM in
@@ -49,12 +46,45 @@ export default function StatementHold() {
         aria: 'none',
       });
 
+      /* Build the roll.
+
+         Each line is turned into a one-line window holding the SAME text
+         twice, and the pair is what moves. At rest the real text sits in
+         the window; as the hold scrubs, the pair travels down by exactly
+         one line so the duplicate takes its place. Because the two faces
+         are identical the sentence never disappears and never changes —
+         it just turns over, the way a counter does.
+
+         The height is measured BEFORE the duplicate goes in. Afterwards
+         the line is two faces tall and would measure the window at twice
+         the size, which shows both copies at once and the roll goes. */
+      const rolls: HTMLElement[] = [];
+      split.lines.forEach((line) => {
+        const el = line as HTMLElement;
+        const h = el.getBoundingClientRect().height;
+        const inner = el.innerHTML;
+
+        const roll = document.createElement('span');
+        roll.className = 'hold-roll';
+        // Duplicate first, real text second: the roll rests at -50% so the
+        // REAL line is the one being read, and screen readers still get
+        // the sentence exactly once.
+        roll.innerHTML =
+          `<span class="hold-face" aria-hidden="true">${inner}</span>` +
+          `<span class="hold-face">${inner}</span>`;
+
+        el.innerHTML = '';
+        el.appendChild(roll);
+        el.style.height = `${h}px`;
+        rolls.push(roll);
+      });
+
       // NB: the from value is declared on the tween below, not set here.
       // With invalidateOnRefresh, a plain .to() re-reads the CURRENT value
-      // as its start on every refresh — so once the words had rendered at
-      // 1 the tween became 1 -> 1 and the statement never animated again.
-      // That is why the line version of this appeared to work in code and
-      // did nothing on the live site.
+      // as its start on every refresh — so once the rolls had rendered at
+      // rest the tween became a no-op and the statement never animated
+      // again. That is why the previous version of this appeared to work
+      // in code and did nothing at all on the live site.
 
       gsap
         .timeline({
@@ -72,41 +102,23 @@ export default function StatementHold() {
             invalidateOnRefresh: true,
           },
         })
-        .fromTo(split.words, { '--wp': 0 }, {
-          '--wp': 1,
-          // Tight enough that the sentence is written at reading pace
-          // rather than crawling a word at a time.
-          stagger: 0.045,
-          ease: 'none',
-          duration: 0.5,
+        .fromTo(rolls, { yPercent: -50 }, {
+          yPercent: 0,
+          // Line after line, like the rows of a board turning over.
+          stagger: 0.12,
+          ease: 'power2.inOut',
+          duration: 0.55,
         });
     }, el);
 
-    /* The failure state this animation must never have.
-
-       A clipped word is invisible but its opacity is 1, so the motion
-       layer's safety sweep — which looks for things left transparent —
-       cannot see it. And this section PINS: if the trigger never resolves,
-       the visitor is held on a viewport of blank paper with no way to
-       scroll past it.
-
-       So: if the hold is on screen and the timeline has still not moved a
-       few seconds in, paint the words and let the scroll go. */
-    const backstop = window.setTimeout(() => {
-      const r = el.getBoundingClientRect();
-      const onScreen = r.top < window.innerHeight && r.bottom > 0;
-      const stalled = ScrollTrigger.getAll().every(
-        (t) => t.trigger !== el || t.progress === 0,
-      );
-      if (onScreen && stalled) {
-        el.querySelectorAll<HTMLElement>('.hold-word').forEach((w) => {
-          w.style.setProperty('--wp', '1');
-        });
-      }
-    }, 5000);
+    /* No backstop needed any more, and that is the point of this shape.
+       The previous version hid the words until the scroll revealed them,
+       so a trigger that never resolved left the visitor pinned on blank
+       paper. Here the text is legible at every value the tween can hold,
+       including the one it starts at — a stalled animation costs the roll
+       and nothing else. */
 
     return () => {
-      window.clearTimeout(backstop);
       split?.revert();
       ctx.revert();
     };

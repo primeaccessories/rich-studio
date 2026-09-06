@@ -579,6 +579,12 @@ a {
 .masthead-strap {
   margin: 0;
   flex: 1 1 18ch;
+  /* Overridden locally, NOT on .t-statement — the statement of practice
+     shares that class and is deliberately large. The strap is a slug line
+     in the band under the rail; it does not need to compete with the work
+     above it. */
+  font-size: clamp(1.1rem, 2.5vw, 2.25rem);
+  line-height: 1.06;
 }
 
 .masthead-feature {
@@ -743,23 +749,23 @@ a {
 
 .hold-copy { margin: 0 0 clamp(18px, 3vh, 36px); max-width: 22ch; }
 
-/* The lines only carry the wrapping now; the words carry the animation. */
-.hold-line { display: block; }
-
-/* THE DRAW
-   Each word is wiped in from its own baseline as the hold scrubs. A clip
-   rather than a fade: --wp 0 paints nothing, --wp 1 paints the whole word,
-   and there is no halfway state where the ink sits below contrast — which
-   is what the line-by-line opacity version kept failing on.
-
-   inset() insets from the TOP, so shrinking the top inset grows the word
-   upward off its baseline. */
-.hold-word {
-  --wp: 1;
-  display: inline-block;
-  clip-path: inset(calc((1 - var(--wp)) * 100%) 0 0 0);
-  will-change: clip-path;
+/* THE ROLL
+   Each line is a one-line window holding the same text twice; the pair
+   inside is what moves. The text is therefore ALWAYS legible — it turns
+   over rather than appearing, the way a counter or a departure board
+   does. The window's height is set in JS from the line's own measured
+   height, before the duplicate goes in. */
+.hold-line {
+  display: block;
+  overflow: hidden;
 }
+
+.hold-roll {
+  display: block;
+  will-change: transform;
+}
+
+.hold-face { display: block; }
 
 .hold-body { opacity: 0.62; max-width: 62ch; }
 
@@ -806,7 +812,7 @@ a {
   .wm-plate { transform: none !important; }
   .wm-k { opacity: 1 !important; }
   .feature-line { animation: none !important; }
-  .hold-word { --wp: 1 !important; clip-path: none !important; }
+  .hold-roll { transform: none !important; }
 }
 
 /* ---------- NAV ---------- */
@@ -2111,6 +2117,13 @@ a {
   box-shadow: 0 40px 120px rgba(10, 10, 10, 0.35);
 }
 
+/* Anchored to the TOP. The capture is 1520x1000 and most windows are
+   wider than that, so a centred cover crops equally off the top and the
+   bottom — and the top is the header, the one part that makes this read
+   as the site rather than as a picture. Cropping only the foot costs
+   nothing: the real page continues below the fold anyway. */
+.cine-img { object-position: top center; }
+
 .cine-img {
   position: absolute;
   inset: 0;
@@ -2119,29 +2132,14 @@ a {
   object-fit: cover;
 }
 
-.cine-cap {
-  position: absolute;
-  left: var(--margin);
-  right: var(--margin);
-  bottom: clamp(24px, 5vh, 64px);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  color: var(--paper);
-  text-shadow: 0 1px 24px rgba(0, 0, 0, 0.5);
-}
 
 /* The caption fades up as the frame grows — at thumbnail size it would
    only be noise on top of the picture. */
-.cine-cap { opacity: 0; animation: cine-cap-in 620ms 340ms var(--ease-out) forwards; }
-
-@keyframes cine-cap-in { to { opacity: 1; } }
 
 .cine-title { font-size: clamp(1.2rem, 4.6vw, 4rem); line-height: 0.94; }
 .cine-client { opacity: 0.85; }
 
 @media (prefers-reduced-motion: reduce) {
-  .cine-cap { animation: none; opacity: 1; }
 }
 
 /* ============================================================
