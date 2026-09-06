@@ -745,7 +745,16 @@ a {
   min-height: calc(100svh - var(--head-h) - var(--band-h, 0px));
   display: flex;
   align-items: center;
-  background: var(--paper-2);
+  /* Ink, so the hooked band and the statement read as ONE black mass
+     rather than a black bar sitting on a grey panel. They are pinned to
+     the same span and released together (see the band hook in
+     PressHero), so any colour seam between them is visible for the whole
+     hold and then travels off the screen as a stripe.
+
+     .target draws itself from currentColor and nothing under here sets
+     its own colour, so inverting the text is this one declaration. */
+  background: var(--ink);
+  color: var(--paper);
 }
 
 .hold-inner { width: 100%; max-width: 1500px; margin-inline: auto; }

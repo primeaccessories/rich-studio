@@ -1039,12 +1039,11 @@ export default function PressHero({
          place is held too, so at the end it is exactly where it appears
          to be and simply scrolls away.
 
-         It ends on the STATEMENT, not on a distance: the statement is
-         what it is staying for, so the two are tied together rather than
-         being two timings that have to be kept in agreement by hand. */
+         It stays for exactly as long as the statement holds, and then
+         the two leave together — see STATEMENT_HOLD_VH below for why that
+         is carried as a shared distance rather than measured off .hold. */
       const bandEl = document.querySelector<HTMLElement>('.hero-band');
       const hookEl = document.querySelector<HTMLElement>('.band-hook');
-      const holdEl = document.querySelector<HTMLElement>('.hold');
       if (bandEl) {
         if (hookEl) {
           /* UNSPACED, and that is forced rather than chosen.
@@ -1064,26 +1063,47 @@ export default function PressHero({
              over the last fifth of the hold, and by the time the pin
              actually releases it is already gone. */
           const bandOffPx = () => Math.round(bandEl.getBoundingClientRect().height + headH() + 8);
+          /* How long the statement holds for — StatementHold.tsx pins with
+             end:'+=140%'. Kept as a distance, NOT measured off .hold's live
+             rect: once that pin is active the element carries its own pin
+             transform, so getBoundingClientRect() reads it hundreds of px
+             below where it actually pins and every timing derived from it
+             lands late. Both triggers start at the same scroll position
+             (this one at `top head`, the statement at `top head+band`, which
+             resolve to the same place), so a shared distance keeps them in
+             agreement without either having to measure the other. */
+          const STATEMENT_HOLD_VH = 1.4;
           const bandHook = ScrollTrigger.create({
             trigger: hookEl,
             start: () => `top ${headH()}px`,
-            end: () => {
-              const cs = getComputedStyle(document.documentElement);
-              const head = parseFloat(cs.getPropertyValue('--head-h')) || 72;
-              const band = parseFloat(cs.getPropertyValue('--band-h')) || 0;
-              const holdTopDoc = holdEl
-                ? holdEl.getBoundingClientRect().top + window.scrollY
-                : 0;
-              // Where the statement pins, plus the 140% it holds for.
-              return holdTopDoc - (head + band) + 1.4 * window.innerHeight;
-            },
+            /* The slide is EXTRA runway on the end, not a slice taken out
+               of the hold.
+
+               It used to end exactly where the statement released and walk
+               the band off over the last fifth of that — so the band left
+               252px of scrolling BEFORE the statement moved, and the strip
+               it vacated under the header went back to paper while the
+               statement was still pinned behind it. That gap is the whole
+               bug: two departures where the comment above promises one.
+
+               Ending bandOffPx LATER means the last bandOffPx of this
+               trigger is pure slide, so the band travels its own height
+               over exactly that many pixels of scroll — 1:1, the same rate
+               the released statement is rising at. They leave locked. */
+            end: () =>
+              `+=${Math.round(STATEMENT_HOLD_VH * window.innerHeight + bandOffPx())}`,
             pin: hookEl,
             pinType: 'transform',
             pinSpacing: false,
             invalidateOnRefresh: true,
             onUpdate: (self) => {
               const p = self.progress;
-              const t = p < 0.8 ? 0 : (p - 0.8) / 0.2;
+              /* Derived from the trigger's own span rather than a hard 0.8,
+                 so the slide stays exactly bandOffPx long however the
+                 viewport, header or band height change under it. */
+              const span = self.end - self.start;
+              const hold = span > 0 ? Math.max(0, (span - bandOffPx()) / span) : 1;
+              const t = p < hold ? 0 : (p - hold) / (1 - hold);
               bandEl.style.transform = t
                 ? `translate3d(0, ${-t * bandOffPx()}px, 0)`
                 : '';
