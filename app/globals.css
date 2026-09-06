@@ -2141,10 +2141,12 @@ a {
   overflow: hidden;
   background: var(--ink);
   pointer-events: none;
-  will-change: left, top, width, height, opacity, transform;
-  /* The fade scales from the middle, so the dissolve reads as continuing
-     through the page rather than drifting off one corner. */
-  transform-origin: 50% 50%;
+  /* transform only — see runCinematic. Animating left/top/width/height
+     here relaid out a full screen element every frame. */
+  will-change: transform, opacity;
+  /* 0 0, because the zoom's translate and scale are computed against the
+     element's top left corner. */
+  transform-origin: 0 0;
   box-shadow: 0 40px 120px rgba(10, 10, 10, 0.35);
 }
 

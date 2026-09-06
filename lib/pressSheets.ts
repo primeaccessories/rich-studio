@@ -452,10 +452,18 @@ export function stampCoverTitle(
 
   /* His mark, then his name. The mark is black on transparency so it sets
      straight onto the paper of the band — no plate behind it. */
-  const sigY = bandTop + 158;
+  // Dropped from 158 to give the mark room to grow without reaching the
+  // client name's baseline at 108. The band is 208 deep, so a baseline at
+  // 172 still leaves 36 beneath it.
+  const sigY = bandTop + 172;
   let sigX = 56;
   if (mark && mark.naturalWidth) {
-    const mh = 34;
+    // 34 was too small to read at the size a book actually appears on the
+    // rail. At 60, sitting on a baseline of 172, the mark spans 119-179 —
+    // clear of the client name's baseline at 108, and clear of the band's
+    // foot at 208. Client names are set in caps and have no descenders,
+    // so that 11 units of headroom is real.
+    const mh = 60;
     const mw = Math.round(mh * (mark.naturalWidth / mark.naturalHeight));
     ctx.globalAlpha = 0.9;
     // Optically centred on the name's x-height rather than its baseline.

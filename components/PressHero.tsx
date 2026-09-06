@@ -820,10 +820,25 @@ export default function PressHero({
         cineEl = el;
         el.className = 'cine';
         el.setAttribute('aria-hidden', 'true');
-        el.style.left = r.left + 'px';
-        el.style.top = r.top + 'px';
-        el.style.width = r.width + 'px';
-        el.style.height = r.height + 'px';
+        /* Laid out at its FINAL size and scaled DOWN to the book, rather
+           than laid out at the book's size and grown.
+
+           Two things follow. The image is rasterised once at full screen
+           size, so the zoom is a downscale settling to 1:1 instead of an
+           upscale away from it — sharp at the end, where it matters. And
+           the whole move is one composited transform rather than four
+           layout properties animating every frame on a full screen
+           element while WebGL is running, which is what made it stutter.
+
+           Uniform scale, matched on width: the spread and the window are
+           different aspects, so a non-uniform one would visibly stretch
+           the page on the way up. */
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        el.style.left = '0px';
+        el.style.top = '0px';
+        el.style.width = vw + 'px';
+        el.style.height = vh + 'px';
         /* The PAGE, not the picture off it.
 
            This used to zoom the bare hero image and draw the client and
@@ -841,10 +856,13 @@ export default function PressHero({
           (proj.page || proj.hero || proj.art || '') + '">';
         document.body.appendChild(el);
 
-        gsap.to(el, {
-          left: 0, top: 0,
-          width: window.innerWidth,
-          height: window.innerHeight,
+        const s0 = r.width / vw;
+        gsap.fromTo(el, {
+          x: r.left,
+          y: r.top + (r.height - vh * s0) / 2,   // centred on the book
+          scale: s0,
+        }, {
+          x: 0, y: 0, scale: 1,
           duration: 0.86,
           ease: 'expo.inOut',
           onComplete: () => {
@@ -946,7 +964,12 @@ export default function PressHero({
         const bandST = ScrollTrigger.create({
           trigger: bandEl,
           start: () => `top ${headH()}px`,
-          end: '+=42%',
+          /* Held for exactly its own height, so it lets go at the moment
+             the next section's top reaches its foot. Any longer and the
+             statement of practice carries on up UNDERNEATH the ink — with
+             no spacer there is nothing holding it back — and the first
+             lines of it disappear into the black. */
+          end: () => '+=' + Math.round(bandEl.getBoundingClientRect().height),
           pin: true,
           pinType: 'transform',
           /* No spacer. With one, pinning reserved 294px of the flow below

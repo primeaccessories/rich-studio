@@ -76,9 +76,13 @@ try {
     // up, so this is weight the hero never waits on — but it is still
     // half a megabyte, which is why it is not full size.
     const tmpWebp = join(tmp, `${slug}.webp`);
+    /* 1600, not 1216. The cinematic ends with this filling the window, so
+       at 1216 a 1920-wide screen was upscaling it 1.58x and the page you
+       land on looked soft. Quality drops a little to keep the weight
+       roughly where it was. */
     execFileSync('convert', [
-      shot, '-resize', '1216x800', '-strip',
-      '-quality', '76', '-define', 'webp:method=6',
+      shot, '-resize', '1600x1053', '-strip',
+      '-quality', '70', '-define', 'webp:method=6',
       tmpWebp,
     ]);
 
